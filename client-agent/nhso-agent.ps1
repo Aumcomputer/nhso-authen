@@ -6,8 +6,8 @@
 
 # ----------------- [ ส่วนตั้งค่าการเชื่อมต่อ SERVER ] -----------------
 # 💡 หากนำไปติดตั้งบน Production Server ให้เปลี่ยน SERVER_IP เป็น IP ของ Server
-$SERVER_URL   = "http://10.10.90.53:4100/api/token/report"
-$AGENT_SECRET = "nhso-agent-secret-10677-rbh"
+$SERVER_URL   = "http://nhso-authen.local/api/token/report"
+$AGENT_SECRET = "nhso-agent-secret-10677-rbr"
 # --------------------------------------------------------------------
 
 $TOKEN_DIR    = "$env:USERPROFILE\SRM Smart Card Single Sign-On"
