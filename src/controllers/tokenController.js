@@ -159,10 +159,17 @@ class TokenController {
     const clientHostname = body.client_hostname || body.clientHostname || null;
 
     // If raw token_text was sent (directly from token.txt)
-    if (token_text && typeof token_text === 'string') {
-      const lines = token_text.split(/\r?\n/);
+    let rawText = '';
+    if (Array.isArray(token_text)) {
+      rawText = token_text.join('\n');
+    } else if (typeof token_text === 'string') {
+      rawText = token_text;
+    }
+
+    if (rawText) {
+      const lines = rawText.split(/\r?\n/);
       for (const line of lines) {
-        const trimmed = line.trim();
+        const trimmed = String(line).trim();
         if (trimmed.startsWith('access-token=')) {
           extractedAccess = trimmed.substring('access-token='.length).trim();
         } else if (trimmed.startsWith('refresh-token=')) {
@@ -170,9 +177,9 @@ class TokenController {
         }
       }
       // If JSON format
-      if (!extractedRefresh && token_text.trim().startsWith('{')) {
+      if (!extractedRefresh && rawText.trim().startsWith('{')) {
         try {
-          const parsed = JSON.parse(token_text);
+          const parsed = JSON.parse(rawText);
           extractedAccess = parsed.access_token || parsed.accessToken || extractedAccess;
           extractedRefresh = parsed.refresh_token || parsed.refreshToken || extractedRefresh;
         } catch {}
