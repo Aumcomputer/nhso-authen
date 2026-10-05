@@ -1,9 +1,10 @@
-require('dotenv').config();
 const path = require('path');
+const envPath = path.resolve(__dirname, '../../.env');
+require('dotenv').config({ path: envPath });
 
 const config = {
   port: process.env.PORT || 4100,
-  envPath: path.resolve(__dirname, '../../.env'),
+  envPath,
 
   // Token endpoints
   tokenUrl: process.env.NHSO_TOKEN_URL || 'https://srmportal.nhso.go.th/api/scard/access-token',
