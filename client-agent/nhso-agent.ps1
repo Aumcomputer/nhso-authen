@@ -7,11 +7,23 @@
 # ----------------- [ ส่วนตั้งค่าการเชื่อมต่อ SERVER ] -----------------
 # 💡 หากนำไปติดตั้งบน Production Server ให้เปลี่ยน SERVER_IP เป็น IP ของ Server
 $SERVER_URL   = "http://nhso-authen.local/api/token/report"
-$AGENT_SECRET = "nhso-agent-secret-10677-rbr"
+$AGENT_SECRET = "nhso-agent-secret-10677-rbh"
 # --------------------------------------------------------------------
 
 $TOKEN_DIR    = "$env:USERPROFILE\SRM Smart Card Single Sign-On"
 $TOKEN_PATH   = "$TOKEN_DIR\token.txt"
+$LOG_FILE     = "C:\NHSO-Agent\agent.log"
+
+function Write-AgentLog {
+    param([string]$message)
+    $timestamp = Get-Date -Format "yyyy-MM-dd HH:mm:ss"
+    $line = "[$timestamp] $message"
+    try {
+        Add-Content -Path $script:LOG_FILE -Value $line -Encoding UTF8 -ErrorAction SilentlyContinue
+    } catch {}
+}
+
+Write-AgentLog "Agent started. Monitoring $TOKEN_PATH -> $SERVER_URL"
 
 Write-Host "============================================================" -ForegroundColor Cyan
 Write-Host "🚀 NHSO SRM Token Sync Agent กำลังทำงาน..." -ForegroundColor Green
@@ -59,12 +71,15 @@ function Send-TokenToServer {
             $officer = $response.data.officerName
             $exp = $response.data.refreshExpiresAt
             Write-Host "[$(Get-Date -Format 'HH:mm:ss')] ✅ ส่ง Token สำเร็จ! [เจ้าหน้าที่: $officer | หมดอายุ: $exp]" -ForegroundColor Green
+            Write-AgentLog "Token sent successfully. Officer: $officer, Exp: $exp"
         } else {
             Write-Host "[$(Get-Date -Format 'HH:mm:ss')] ⚠️ Server แจ้งเตือน: $($response.message)" -ForegroundColor Yellow
+            Write-AgentLog "Server warning: $($response.message)"
         }
     }
     catch {
         Write-Host "[$(Get-Date -Format 'HH:mm:ss')] ❌ ส่ง Token ไม่สำเร็จ: $($_.Exception.Message)" -ForegroundColor Red
+        Write-AgentLog "Error sending token: $($_.Exception.Message)"
     }
 }
 

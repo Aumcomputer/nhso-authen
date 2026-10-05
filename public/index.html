@@ -65,6 +65,11 @@
           <span class="w-2 h-2 rounded-full bg-slate-400 animate-pulse"></span>
           <span>NHSO Token: ตรวจสอบ...</span>
         </div>
+        <!-- Client Agents Status Badge -->
+        <button onclick="openAgentModal()" id="agent-badge" title="คลิกเพื่อดูสถานะเครื่องลูกข่ายเวชระเบียน (Client Agents)" class="flex items-center space-x-1.5 px-2.5 py-1 rounded-full bg-slate-100 text-slate-600 border border-slate-200 hover:bg-slate-200 transition cursor-pointer">
+          <span class="w-2 h-2 rounded-full bg-slate-400 animate-pulse"></span>
+          <span id="agent-badge-text">Agent: ตรวจสอบ...</span>
+        </button>
         <!-- Manual Refresh Token Button -->
         <button onclick="refreshTokenManual()" title="บังคับขอ Access Token ใหม่" class="flex items-center space-x-1 px-2.5 py-1 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-md border border-slate-300 transition">
           <i data-lucide="refresh-cw" class="w-3.5 h-3.5"></i>
@@ -363,6 +368,77 @@
           </button>
         </div>
       </div>
+    <!-- Client Agent Status Modal -->
+  <div id="agent-modal" class="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-50 hidden flex items-center justify-center p-3 sm:p-4">
+    <div class="bg-white rounded-2xl shadow-2xl max-w-4xl w-full max-h-[90vh] flex flex-col border border-slate-200 overflow-hidden">
+      <!-- Modal Header -->
+      <div class="px-6 py-4 border-b border-slate-200 flex items-center justify-between bg-slate-50">
+        <div class="flex items-center space-x-3">
+          <div class="w-10 h-10 rounded-xl bg-emerald-600 text-white flex items-center justify-center shadow-xs">
+            <i data-lucide="radio" class="w-5 h-5"></i>
+          </div>
+          <div>
+            <h3 class="text-base font-bold text-slate-800">สถานะเครื่องลูกข่ายเวชระเบียน (Client Agents)</h3>
+            <p class="text-xs text-slate-500">เครื่องคอมพิวเตอร์ที่รัน Agent ดึง Token สปสช. จากบัตร Smart Card ส่งเข้า Server</p>
+          </div>
+        </div>
+        <div class="flex items-center space-x-2">
+          <button onclick="fetchAgentStatus()" title="รีเฟรชข้อมูล" class="p-2 text-slate-500 hover:text-slate-800 hover:bg-slate-200 rounded-lg transition">
+            <i data-lucide="refresh-cw" class="w-4 h-4"></i>
+          </button>
+          <button onclick="closeAgentModal()" class="text-slate-400 hover:text-slate-600 p-2 rounded-lg hover:bg-slate-200 transition">
+            <i data-lucide="x" class="w-5 h-5"></i>
+          </button>
+        </div>
+      </div>
+
+      <!-- Modal Body -->
+      <div class="p-6 overflow-y-auto flex-1 space-y-4">
+        <!-- Client List Table -->
+        <div class="border border-slate-200 rounded-xl overflow-hidden shadow-xs">
+          <table class="w-full text-xs text-left">
+            <thead class="bg-slate-50 text-slate-700 border-b border-slate-200 font-semibold uppercase">
+              <tr>
+                <th class="py-3 px-4">สถานะ</th>
+                <th class="py-3 px-4">ชื่อเครื่อง (Hostname)</th>
+                <th class="py-3 px-4">IP Address</th>
+                <th class="py-3 px-4">เจ้าหน้าที่ผู้เสียบบัตร</th>
+                <th class="py-3 px-4">เวลาส่งล่าสุด</th>
+                <th class="py-3 px-4">Token หมดอายุเมื่อ</th>
+              </tr>
+            </thead>
+            <tbody id="agent-table-body" class="divide-y divide-slate-100 bg-white">
+              <tr>
+                <td colspan="6" class="py-8 text-center text-slate-400">
+                  <i data-lucide="loader-2" class="w-6 h-6 mx-auto animate-spin mb-2 text-emerald-600"></i>
+                  กำลังโหลดข้อมูล Agent...
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <!-- Info / Helper Card -->
+        <div class="bg-slate-50 rounded-xl p-4 border border-slate-200 text-xs text-slate-600 space-y-2">
+          <div class="font-bold text-slate-800 flex items-center space-x-1.5">
+            <i data-lucide="info" class="w-4 h-4 text-blue-600"></i>
+            <span>วิธีตรวจสอบการทำงานที่เครื่องลูกข่าย (Client PC):</span>
+          </div>
+          <ul class="list-disc list-inside space-y-1 text-slate-600 pl-1">
+            <li>เปิด <strong>Task Manager</strong> &rarr; แท็บ <strong>Details</strong> &rarr; มองหา <code class="bg-slate-200 px-1 py-0.5 rounded text-slate-800">powershell.exe</code> หรือ <code class="bg-slate-200 px-1 py-0.5 rounded text-slate-800">wscript.exe</code></li>
+            <li>ดูประวัติการทำงานจาก Log File ในเครื่องลูกข่ายที่: <code class="bg-slate-200 px-1 py-0.5 rounded text-slate-800">C:\NHSO-Agent\agent.log</code></li>
+            <li>เมื่อเจ้าหน้าที่เสียบบัตร Smart Card ในโปรแกรม SRM SSO ตัว Agent จะตรวจจับและส่ง Token ใหม่อัตโนมัติทันที</li>
+          </ul>
+        </div>
+      </div>
+
+      <!-- Modal Footer -->
+      <div class="px-6 py-3 border-t border-slate-200 bg-slate-50 flex justify-between items-center text-xs text-slate-500">
+        <span id="agent-modal-count">จำนวนเครื่องที่พบ: 0 เครื่อง</span>
+        <button onclick="closeAgentModal()" class="px-4 py-2 bg-slate-200 hover:bg-slate-300 text-slate-700 font-semibold rounded-lg transition">
+          ปิดหน้าต่าง
+        </button>
+      </div>
     </div>
   </div>
 
@@ -441,6 +517,9 @@
       } catch {
         // ignore
       }
+
+      // Check Client Agents
+      await fetchAgentStatus();
     }
 
     // Load specialties dropdown
@@ -2080,11 +2159,104 @@
       }
     }
 
+    // Fetch and display Client Agents status
+    async function fetchAgentStatus(showToastMsg = false) {
+      try {
+        const res = await fetch('/api/token/clients').then(r => r.json());
+        const badge = document.getElementById('agent-badge');
+        const badgeText = document.getElementById('agent-badge-text');
+        
+        if (res.success) {
+          const list = res.data || [];
+          const activeCount = list.filter(c => c.status === 'ACTIVE').length;
+          
+          if (badge && badgeText) {
+            if (activeCount > 0) {
+              badge.className = 'flex items-center space-x-1.5 px-2.5 py-1 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-300 hover:bg-emerald-100 transition cursor-pointer shadow-xs';
+              badge.innerHTML = `<span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span><span id="agent-badge-text">Agent: ออนไลน์ ${activeCount} เครื่อง</span>`;
+            } else if (list.length > 0) {
+              badge.className = 'flex items-center space-x-1.5 px-2.5 py-1 rounded-full bg-amber-50 text-amber-700 border border-amber-300 hover:bg-amber-100 transition cursor-pointer shadow-xs';
+              badge.innerHTML = `<span class="w-2 h-2 rounded-full bg-amber-500"></span><span id="agent-badge-text">Agent: หมดอายุ (${list.length})</span>`;
+            } else {
+              badge.className = 'flex items-center space-x-1.5 px-2.5 py-1 rounded-full bg-slate-100 text-slate-600 border border-slate-200 hover:bg-slate-200 transition cursor-pointer';
+              badge.innerHTML = `<span class="w-2 h-2 rounded-full bg-slate-400"></span><span id="agent-badge-text">Agent: ไม่มีเครื่องเชื่อมต่อ</span>`;
+            }
+          }
+          
+          renderAgentModalTable(list);
+          if (showToastMsg) showToast('รีเฟรชข้อมูล Agent สำเร็จ', 'success');
+        }
+      } catch (err) {
+        console.error('Failed to fetch client agents:', err);
+      }
+    }
+
+    function renderAgentModalTable(clients) {
+      const tbody = document.getElementById('agent-table-body');
+      const countLabel = document.getElementById('agent-modal-count');
+      if (!tbody) return;
+
+      if (countLabel) {
+        countLabel.textContent = `จำนวนเครื่องที่พบ: ${clients.length} เครื่อง`;
+      }
+
+      if (clients.length === 0) {
+        tbody.innerHTML = `
+          <tr>
+            <td colspan="6" class="py-10 text-center text-slate-400">
+              <i data-lucide="radio-off" class="w-8 h-8 mx-auto mb-2 text-slate-300"></i>
+              <p class="font-medium text-slate-600">ยังไม่พบเครื่องลูกข่ายที่ส่ง Token เข้ามา</p>
+              <p class="text-xs text-slate-400 mt-1">ติดตั้ง Agent บนเครื่องเวชระเบียนผ่าน <code class="bg-slate-100 px-1 py-0.5 rounded">install-agent.bat</code></p>
+            </td>
+          </tr>
+        `;
+        lucide.createIcons();
+        return;
+      }
+
+      tbody.innerHTML = clients.map(c => {
+        const isActive = c.status === 'ACTIVE';
+        const statusBadge = isActive
+          ? `<span class="px-2 py-0.5 bg-emerald-100 text-emerald-800 rounded-full font-semibold inline-flex items-center space-x-1"><span class="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse mr-1"></span>ออนไลน์</span>`
+          : `<span class="px-2 py-0.5 bg-slate-100 text-slate-600 rounded-full font-medium inline-flex items-center">หมดอายุ</span>`;
+
+        return `
+          <tr class="hover:bg-slate-50 transition border-b border-slate-100">
+            <td class="py-3 px-4">${statusBadge}</td>
+            <td class="py-3 px-4 font-mono font-semibold text-slate-800">${escapeHtml(c.client_hostname || 'ไม่ระบุ')}</td>
+            <td class="py-3 px-4 font-mono text-slate-600">${escapeHtml(c.client_ip || '-')}</td>
+            <td class="py-3 px-4">
+              <div class="font-medium text-slate-800">${escapeHtml(c.officer_name || '-')}</div>
+              <div class="text-[11px] text-slate-400 font-mono">CID: ${escapeHtml(c.officer_cid || '-')}</div>
+            </td>
+            <td class="py-3 px-4 text-slate-600 font-mono">${formatThaiDateTime(c.last_sync_at)}</td>
+            <td class="py-3 px-4 text-slate-600 font-mono">${formatThaiDateTime(c.refresh_expires_at)}</td>
+          </tr>
+        `;
+      }).join('');
+
+      lucide.createIcons();
+    }
+
+    function openAgentModal() {
+      const modal = document.getElementById('agent-modal');
+      if (modal) {
+        modal.classList.remove('hidden');
+        fetchAgentStatus();
+        lucide.createIcons();
+      }
+    }
+
+    function closeAgentModal() {
+      document.getElementById('agent-modal')?.classList.add('hidden');
+    }
+
     // Close modal on ESC key or background click
     window.addEventListener('keydown', (e) => {
       if (e.key === 'Escape') {
         closeHistoryModal();
         closeRightDetailModal();
+        closeAgentModal();
       }
     });
     document.getElementById('history-modal')?.addEventListener('click', (e) => {
@@ -2092,6 +2264,9 @@
     });
     document.getElementById('right-detail-modal')?.addEventListener('click', (e) => {
       if (e.target.id === 'right-detail-modal') closeRightDetailModal();
+    });
+    document.getElementById('agent-modal')?.addEventListener('click', (e) => {
+      if (e.target.id === 'agent-modal') closeAgentModal();
     });
 
     // Simple toast notification
