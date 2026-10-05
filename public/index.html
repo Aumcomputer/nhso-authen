@@ -1,0 +1,2122 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ระบบตรวจสอบสิทธิผู้ป่วย สปสช. (NHSO Right Verification)</title>
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Google Fonts: Sarabun & Inter -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Sarabun:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <!-- Lucide Icons -->
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <style>
+    body {
+      font-family: 'Sarabun', 'Inter', sans-serif;
+    }
+    .custom-scroll::-webkit-scrollbar {
+      width: 8px;
+      height: 8px;
+    }
+    .custom-scroll::-webkit-scrollbar-track {
+      background: #f1f5f9;
+      border-radius: 4px;
+    }
+    .custom-scroll::-webkit-scrollbar-thumb {
+      background: #94a3b8;
+      border-radius: 4px;
+    }
+    .custom-scroll::-webkit-scrollbar-thumb:hover {
+      background: #64748b;
+    }
+  </style>
+</head>
+<body class="bg-slate-50 text-slate-800 min-h-screen flex flex-col">
+
+  <!-- Header -->
+  <header class="bg-white border-b border-slate-200 sticky top-0 z-30 shadow-sm w-full">
+    <div class="w-full px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
+      <div class="flex items-center space-x-3">
+        <div class="bg-emerald-600 text-white p-2 rounded-lg shadow-sm">
+          <i data-lucide="shield-check" class="w-6 h-6"></i>
+        </div>
+        <div>
+          <h1 class="text-lg font-bold text-slate-900 leading-tight">ระบบตรวจสอบสิทธิผู้รับบริการ สปสช. (HOSxP - NHSO)</h1>
+          <p class="text-xs text-slate-500">ตรวจสอบสิทธิการรักษาและประวัติ Authen Code เชื่อมต่อระบบโรงพยาบาล</p>
+        </div>
+      </div>
+
+      <!-- System Status Badges -->
+      <div class="flex items-center space-x-3 text-xs">
+        <!-- DB Status -->
+        <div id="db-badge" class="flex items-center space-x-1.5 px-2.5 py-1 rounded-full bg-slate-100 text-slate-600 border border-slate-200">
+          <span class="w-2 h-2 rounded-full bg-slate-400 animate-pulse"></span>
+          <span>DB HOSxP: ตรวจสอบ...</span>
+        </div>
+        <!-- D-Flow DB Status -->
+        <div id="dflow-badge" class="flex items-center space-x-1.5 px-2.5 py-1 rounded-full bg-slate-100 text-slate-600 border border-slate-200">
+          <span class="w-2 h-2 rounded-full bg-slate-400 animate-pulse"></span>
+          <span>DB D-Flow: ตรวจสอบ...</span>
+        </div>
+        <!-- Token Status -->
+        <div id="token-badge" class="flex items-center space-x-1.5 px-2.5 py-1 rounded-full bg-slate-100 text-slate-600 border border-slate-200">
+          <span class="w-2 h-2 rounded-full bg-slate-400 animate-pulse"></span>
+          <span>NHSO Token: ตรวจสอบ...</span>
+        </div>
+        <!-- Manual Refresh Token Button -->
+        <button onclick="refreshTokenManual()" title="บังคับขอ Access Token ใหม่" class="flex items-center space-x-1 px-2.5 py-1 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-md border border-slate-300 transition">
+          <i data-lucide="refresh-cw" class="w-3.5 h-3.5"></i>
+          <span>รีเฟรช Token</span>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- Main Content (Full Width) -->
+  <main class="flex-1 w-full px-4 sm:px-6 lg:px-8 py-4 space-y-4">
+
+    <!-- Filter & Query Panel -->
+    <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-5">
+      <form id="filter-form" onsubmit="event.preventDefault(); fetchVisits();" class="grid grid-cols-1 md:grid-cols-12 gap-3 items-end">
+        <!-- Date Picker -->
+        <div class="md:col-span-2">
+          <label class="block text-xs font-semibold text-slate-700 mb-1.5">
+            <i data-lucide="calendar" class="w-3.5 h-3.5 inline mr-1 text-slate-500"></i>วันที่รับบริการ (vstdate)
+          </label>
+          <input type="date" id="vstdate" class="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-lg text-sm text-slate-800 focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 outline-none transition">
+        </div>
+
+        <!-- Specialty Dropdown -->
+        <div class="md:col-span-3">
+          <label class="block text-xs font-semibold text-slate-700 mb-1.5">
+            <i data-lucide="stethoscope" class="w-3.5 h-3.5 inline mr-1 text-slate-500"></i>แผนก / ความเชี่ยวชาญ (spclty)
+          </label>
+          <select id="spclty" class="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-lg text-sm text-slate-800 focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 outline-none transition">
+            <option value="all">-- ทุกแผนก (All) --</option>
+          </select>
+        </div>
+
+        <!-- HOSxP Rights Dropdown with Checkbox Filter -->
+        <div class="md:col-span-3 relative" id="pttype-dropdown-wrapper">
+          <label class="block text-xs font-semibold text-slate-700 mb-1.5 flex items-center justify-between">
+            <span class="flex items-center">
+              <i data-lucide="tag" class="w-3.5 h-3.5 inline mr-1 text-emerald-600"></i>สิทธิใน HOSxP (pttype)
+            </span>
+            <span id="pttype-btn-count" class="text-[11px] font-semibold text-emerald-700">ทั้งหมด</span>
+          </label>
+          
+          <!-- Dropdown Trigger Button -->
+          <button type="button" id="pttype-dropdown-btn" onclick="togglePttypeDropdownMenu(event)" class="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-lg text-sm text-slate-800 flex items-center justify-between focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 outline-none transition text-left hover:bg-white shadow-2xs">
+            <span id="pttype-dropdown-label" class="truncate font-medium text-slate-700 pr-2">-- ทุกสิทธิการรักษา --</span>
+            <i data-lucide="chevron-down" id="pttype-dropdown-arrow" class="w-4 h-4 text-slate-400 shrink-0 transition-transform duration-200"></i>
+          </button>
+
+          <!-- Dropdown Menu Popover -->
+          <div id="pttype-dropdown-menu" class="hidden absolute left-0 right-0 z-40 mt-1.5 bg-white border border-slate-200 rounded-xl shadow-xl p-3 space-y-2.5 min-w-[300px]">
+            <!-- Header: Select All / Clear All & Quick Search -->
+            <div class="space-y-2 pb-2 border-b border-slate-100">
+              <div class="flex items-center justify-between text-xs">
+                <span id="pttype-menu-badge" class="font-semibold text-slate-700 text-[11px] bg-slate-100 px-2 py-0.5 rounded-full">เลือกทั้งหมด</span>
+                <div class="flex items-center space-x-2 text-xs">
+                  <button type="button" onclick="selectAllPttypes(true)" class="text-emerald-700 hover:text-emerald-800 font-semibold hover:underline">
+                    เลือกทั้งหมด
+                  </button>
+                  <span class="text-slate-300">|</span>
+                  <button type="button" onclick="selectAllPttypes(false)" class="text-slate-500 hover:text-slate-700 hover:underline">
+                    ล้างทั้งหมด
+                  </button>
+                </div>
+              </div>
+              <div class="relative">
+                <i data-lucide="search" class="w-3.5 h-3.5 text-slate-400 absolute left-2.5 top-1/2 -translate-y-1/2"></i>
+                <input type="text" id="pttype-search-input" oninput="filterPttypeDropdownList()" placeholder="ค้นหารหัส หรือชื่อสิทธิ..." class="w-full pl-8 pr-3 py-1.5 text-xs bg-slate-50 border border-slate-200 rounded-lg focus:bg-white focus:ring-1 focus:ring-emerald-500 outline-none transition">
+              </div>
+            </div>
+
+            <!-- Checkbox List Items Container -->
+            <div id="pttype-checkbox-list" class="max-h-56 overflow-y-auto custom-scroll space-y-1 pr-1">
+              <span class="text-slate-400 text-xs italic py-2 block text-center">กดค้นหาข้อมูลเพื่อโหลดสิทธิ</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Search Text Filter -->
+        <div class="md:col-span-2">
+          <label class="block text-xs font-semibold text-slate-700 mb-1.5">
+            <i data-lucide="search" class="w-3.5 h-3.5 inline mr-1 text-slate-500"></i>ค้นหาด่วน (HN / ชื่อ / CID)
+          </label>
+          <input type="text" id="quick-search" oninput="applyClientFilter()" placeholder="HN หรือชื่อ หรือเลขบัตร..." class="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-lg text-sm text-slate-800 focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 outline-none transition">
+        </div>
+
+        <!-- Search Action Buttons -->
+        <div class="md:col-span-2 flex space-x-1.5">
+          <button type="submit" class="flex-1 flex items-center justify-center space-x-1 px-3 py-2 bg-emerald-600 hover:bg-emerald-700 text-white font-medium rounded-lg text-xs shadow-sm transition">
+            <i data-lucide="search" class="w-3.5 h-3.5"></i>
+            <span>ค้นหา</span>
+          </button>
+          <button type="button" onclick="batchCheckAndSaveDflow()" id="btn-batch-check" class="flex-1 flex items-center justify-center space-x-1 px-3 py-2 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-lg text-xs shadow-sm transition">
+            <i data-lucide="zap" class="w-3.5 h-3.5"></i>
+            <span>ตรวจทั้งหมด</span>
+          </button>
+        </div>
+      </form>
+    </div>
+
+    <!-- Summary KPI Cards -->
+    <div class="grid grid-cols-2 sm:grid-cols-5 gap-3">
+      <!-- Total Visits -->
+      <div class="bg-white rounded-xl p-3.5 border border-slate-200 shadow-sm flex items-center space-x-3">
+        <div class="p-2.5 bg-blue-50 text-blue-600 rounded-lg">
+          <i data-lucide="users" class="w-5 h-5"></i>
+        </div>
+        <div>
+          <p class="text-xs text-slate-500 font-medium">ผู้รับบริการทั้งหมด</p>
+          <p id="kpi-total" class="text-xl font-bold text-slate-800">0</p>
+        </div>
+      </div>
+
+      <!-- Saved in d-flow -->
+      <div class="bg-white rounded-xl p-3.5 border border-slate-200 shadow-sm flex items-center space-x-3">
+        <div class="p-2.5 bg-teal-50 text-teal-600 rounded-lg">
+          <i data-lucide="database" class="w-5 h-5"></i>
+        </div>
+        <div>
+          <p class="text-xs text-slate-500 font-medium">บันทึกลง DB แล้ว</p>
+          <p id="kpi-dflow-saved" class="text-xl font-bold text-teal-600">0</p>
+        </div>
+      </div>
+
+      <!-- Has Auth Code in HOS -->
+      <div class="bg-white rounded-xl p-3.5 border border-slate-200 shadow-sm flex items-center space-x-3">
+        <div class="p-2.5 bg-emerald-50 text-emerald-600 rounded-lg">
+          <i data-lucide="check-circle-2" class="w-5 h-5"></i>
+        </div>
+        <div>
+          <p class="text-xs text-slate-500 font-medium">มี Authen ใน HOS</p>
+          <p id="kpi-has-auth-hos" class="text-xl font-bold text-emerald-600">0</p>
+        </div>
+      </div>
+
+      <!-- Has Auth Code in API -->
+      <div class="bg-white rounded-xl p-3.5 border border-slate-200 shadow-sm flex items-center space-x-3">
+        <div class="p-2.5 bg-blue-50 text-blue-600 rounded-lg">
+          <i data-lucide="badge-check" class="w-5 h-5"></i>
+        </div>
+        <div>
+          <p class="text-xs text-slate-500 font-medium">มี Authen ใน สปสช. (API)</p>
+          <p id="kpi-has-auth-api" class="text-xl font-bold text-blue-600">0</p>
+        </div>
+      </div>
+
+      <!-- No Auth Code -->
+      <div class="bg-white rounded-xl p-3.5 border border-slate-200 shadow-sm flex items-center space-x-3">
+        <div class="p-2.5 bg-amber-50 text-amber-600 rounded-lg">
+          <i data-lucide="alert-circle" class="w-5 h-5"></i>
+        </div>
+        <div>
+          <p class="text-xs text-slate-500 font-medium">ยังไม่มี Authen</p>
+          <p id="kpi-no-auth" class="text-xl font-bold text-amber-600">0</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Batch Progress Bar (Hidden by default) -->
+    <div id="batch-progress-container" class="hidden bg-white p-4 rounded-xl border border-blue-200 shadow-sm space-y-2">
+      <div class="flex justify-between text-xs text-slate-700 font-medium">
+        <span id="batch-status-text">กำลังตรวจสอบสิทธิ & Authen... (0/0)</span>
+        <button onclick="stopBatchCheck()" class="text-red-600 hover:text-red-700 underline font-semibold">หยุดการตรวจสอบ</button>
+      </div>
+      <div class="w-full bg-slate-200 rounded-full h-2.5 overflow-hidden">
+        <div id="batch-progress-bar" class="bg-blue-600 h-2.5 rounded-full transition-all duration-300" style="width: 0%"></div>
+      </div>
+    </div>
+
+    <!-- Patient Visits Table Container -->
+    <div class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
+      <!-- Table Header & Controls -->
+      <div class="px-5 py-4 border-b border-slate-200 flex flex-wrap items-center justify-between gap-3">
+        <div class="flex items-center space-x-2">
+          <h2 class="text-base font-bold text-slate-800">รายชื่อผู้รับบริการ</h2>
+          <span id="table-count-badge" class="px-2 py-0.5 bg-slate-100 text-slate-700 rounded-full text-xs font-semibold">0 รายการ</span>
+        </div>
+
+        <!-- Filter tabs: All, Unsaved, No Auth -->
+        <div class="flex items-center space-x-1 bg-slate-100 p-1 rounded-lg text-xs font-medium">
+          <button onclick="setAuthFilter('all')" id="tab-all" class="px-3 py-1 rounded-md bg-white text-slate-800 shadow-sm transition">ทั้งหมด</button>
+          <button onclick="setAuthFilter('unsaved_dflow')" id="tab-unsaved-dflow" class="px-3 py-1 rounded-md text-slate-600 hover:text-slate-800 transition">ยังไม่ได้ตรวจสอบ</button>
+          <button onclick="setAuthFilter('no_auth')" id="tab-no-auth" class="px-3 py-1 rounded-md text-slate-600 hover:text-slate-800 transition">ยังไม่มี Authen</button>
+        </div>
+      </div>
+
+      <!-- Table -->
+      <div class="overflow-x-auto custom-scroll">
+        <table class="w-full text-left border-collapse text-sm">
+          <thead>
+            <tr class="bg-slate-50 border-b border-slate-200 text-slate-600 font-semibold uppercase tracking-wider text-xs">
+              <th class="py-3 px-3 text-center w-12">#</th>
+              <th class="py-3 px-3">เวลา / VN</th>
+              <th class="py-3 px-3">HN / เลขบัตร (CID)</th>
+              <th class="py-3 px-3">ชื่อ - สกุล</th>
+              <th class="py-3 px-3">สิทธิใน HOSxP</th>
+              <th class="py-3 px-3">รพ.หลัก / รอง (HOS)</th>
+              <th class="py-3 px-3 min-w-[130px] text-center">Authen Code (HOS)</th>
+              <th class="py-3 px-3 min-w-[220px]">
+                <div class="flex items-center space-x-1 cursor-help" title="คลิกที่ข้อมูลในคอลัมน์นี้เพื่อดูรายละเอียดสิทธิ์การรักษาที่บันทึกใน DB">
+                  <span>ตรวจสอบสิทธิ์ สปสช. (API)</span>
+                  <i data-lucide="info" class="w-3.5 h-3.5 text-blue-500"></i>
+                </div>
+              </th>
+              <th class="py-3 px-3 text-center min-w-[150px]">Authen Code (API)</th>
+              <th class="py-3 px-3">ผู้บันทึก (Staff)</th>
+            </tr>
+          </thead>
+          <tbody id="visit-table-body" class="divide-y divide-slate-100 text-slate-700">
+            <tr>
+              <td colspan="10" class="py-12 text-center text-slate-400">
+                <i data-lucide="inbox" class="w-10 h-10 mx-auto mb-2 stroke-1"></i>
+                <p>เลือกวันที่และแผนก แล้วกดปุ่ม "ค้นหาข้อมูล"</p>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </main>
+
+  <!-- Authencode History Modal -->
+  <div id="history-modal" class="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-50 hidden flex items-center justify-center p-2 sm:p-4">
+    <div class="bg-white rounded-2xl shadow-2xl max-w-[96vw] w-full max-h-[92vh] flex flex-col border border-slate-200 overflow-hidden">
+      <!-- Modal Header -->
+      <div class="px-6 py-3.5 border-b border-slate-200 flex items-center justify-between bg-slate-50">
+        <div>
+          <h3 class="text-base font-bold text-slate-800" id="modal-title">ประวัติการ Authen จาก สปสช.</h3>
+          <p class="text-xs text-slate-500 font-mono" id="modal-subtitle">PID / CID: -</p>
+        </div>
+        <button onclick="closeHistoryModal()" class="text-slate-400 hover:text-slate-600 p-1.5 rounded-lg hover:bg-slate-200 transition">
+          <i data-lucide="x" class="w-5 h-5"></i>
+        </button>
+      </div>
+
+      <!-- Modal Body -->
+      <div class="p-5 overflow-y-auto custom-scroll flex-1 space-y-4" id="modal-body">
+        <div class="text-center py-8 text-slate-400">
+          <i data-lucide="loader-2" class="w-8 h-8 mx-auto animate-spin mb-2"></i>
+          กำลังดึงข้อมูลประวัติจาก สปสช....
+        </div>
+      </div>
+
+      <!-- Modal Footer -->
+      <div class="px-6 py-3 border-t border-slate-200 bg-slate-50 flex items-center justify-between">
+        <span class="text-xs text-slate-500">ข้อมูลเชื่อมต่อตรงจากระบบ สปสช. (authenservice.nhso.go.th)</span>
+        <button onclick="closeHistoryModal()" class="px-4 py-2 bg-slate-200 hover:bg-slate-300 text-slate-700 text-xs font-semibold rounded-lg transition">
+          ปิดหน้าต่าง
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Right Detail Modal (รายละเอียดสิทธิ์การรักษาจาก สปสช. ใน DB) -->
+  <div id="right-detail-modal" class="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-50 hidden flex items-center justify-center p-2 sm:p-4">
+    <div class="bg-white rounded-2xl shadow-2xl max-w-[95vw] lg:max-w-6xl xl:max-w-7xl w-full max-h-[92vh] flex flex-col border border-slate-200 overflow-hidden">
+      <!-- Modal Header -->
+      <div class="px-6 py-4 border-b border-slate-200 flex items-center justify-between bg-slate-50">
+        <div class="flex items-center space-x-3.5">
+          <div class="w-12 h-12 rounded-xl bg-gradient-to-tr from-blue-600 to-indigo-600 text-white flex items-center justify-center shadow-sm">
+            <i data-lucide="shield-check" class="w-7 h-7"></i>
+          </div>
+          <div>
+            <div class="flex items-center space-x-2.5">
+              <h3 class="text-lg font-bold text-slate-800" id="right-modal-title">รายละเอียดสิทธิ์การรักษา สปสช. (บันทึกใน DB)</h3>
+              <span id="right-modal-badge" class="px-2.5 py-0.5 rounded text-xs font-semibold bg-emerald-100 text-emerald-800 border border-emerald-300">d-flow DB</span>
+            </div>
+            <p class="text-sm text-slate-500 font-mono mt-0.5" id="right-modal-subtitle">VN: - | HN: - | CID: -</p>
+          </div>
+        </div>
+        <button onclick="closeRightDetailModal()" class="text-slate-400 hover:text-slate-600 p-2 rounded-lg hover:bg-slate-200 transition">
+          <i data-lucide="x" class="w-6 h-6"></i>
+        </button>
+      </div>
+
+      <!-- Modal Body -->
+      <div class="p-6 overflow-y-auto custom-scroll flex-1 space-y-6 text-slate-700" id="right-modal-body">
+        <div class="text-center py-12 text-slate-400">
+          <i data-lucide="loader-2" class="w-8 h-8 mx-auto animate-spin mb-2 text-blue-600"></i>
+          <p class="text-sm">กำลังดึงข้อมูลรายละเอียดสิทธิ์จากฐานข้อมูล (d-flow)...</p>
+        </div>
+      </div>
+
+      <!-- Modal Footer -->
+      <div class="px-6 py-4 border-t border-slate-200 bg-slate-50 flex items-center justify-between">
+        <div class="text-sm text-slate-500 flex items-center space-x-2" id="right-modal-footer-info">
+          <i data-lucide="database" class="w-4 h-4 text-blue-600"></i>
+          <span>ตาราง <code class="font-mono text-slate-700 bg-slate-200/80 px-2 py-0.5 rounded font-semibold text-xs">d-flow.vn_nhso_authen</code></span>
+        </div>
+        <div class="flex items-center space-x-3">
+          <button id="right-modal-btn-recheck" class="px-4 py-2 bg-blue-50 hover:bg-blue-100 text-blue-700 text-sm font-semibold rounded-lg border border-blue-200 transition flex items-center space-x-1.5 shadow-xs">
+            <i data-lucide="refresh-cw" class="w-4 h-4"></i>
+            <span>ตรวจใหม่จาก สปสช.</span>
+          </button>
+          <button onclick="closeRightDetailModal()" class="px-5 py-2 bg-slate-200 hover:bg-slate-300 text-slate-700 text-sm font-semibold rounded-lg transition">
+            ปิดหน้าต่าง
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Toast Container -->
+  <div id="toast-container" class="fixed bottom-4 right-4 z-50 space-y-2"></div>
+
+  <!-- JavaScript Application Logic -->
+  <script>
+    // State management
+    let rawVisits = [];
+    let currentAuthFilter = 'all';
+    let isBatchRunning = false;
+    let shouldStopBatch = false;
+    let distinctPttypes = []; // Array of { pttype, pttypename, count }
+    let selectedPttypes = new Set(); // Set of selected pttype strings
+    const nhsoCache = new Map(); // pid -> nhsoRightData
+
+    // Initialize application on load
+    document.addEventListener('DOMContentLoaded', async () => {
+      lucide.createIcons();
+
+      // Set default date to today or 2026-09-28
+      const today = new Date().toISOString().slice(0, 10);
+      document.getElementById('vstdate').value = today;
+
+      // Check system health
+      checkSystemHealth();
+
+      // Load specialties
+      await loadSpecialties();
+
+      // Auto fetch default
+      fetchVisits();
+    });
+
+    // Check DB and Token health
+    async function checkSystemHealth() {
+      try {
+        const dbRes = await fetch('/api/db/health').then(r => r.json());
+        const dbBadge = document.getElementById('db-badge');
+        if (dbRes.success) {
+          dbBadge.className = 'flex items-center space-x-1.5 px-2.5 py-1 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200';
+          dbBadge.innerHTML = `<span class="w-2 h-2 rounded-full bg-emerald-500"></span><span>DB HOS: เชื่อมต่อแล้ว</span>`;
+        } else {
+          dbBadge.className = 'flex items-center space-x-1.5 px-2.5 py-1 rounded-full bg-red-50 text-red-700 border border-red-200';
+          dbBadge.innerHTML = `<span class="w-2 h-2 rounded-full bg-red-500"></span><span>DB HOS: ผิดพลาด</span>`;
+        }
+      } catch {
+        // ignore
+      }
+
+      try {
+        const dflowRes = await fetch('/api/db/dflow-health').then(r => r.json());
+        const dflowBadge = document.getElementById('dflow-badge');
+        if (dflowBadge) {
+          if (dflowRes.success) {
+            dflowBadge.className = 'flex items-center space-x-1.5 px-2.5 py-1 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200';
+            dflowBadge.innerHTML = `<span class="w-2 h-2 rounded-full bg-emerald-500"></span><span>DB D-Flow: เชื่อมต่อแล้ว</span>`;
+          } else {
+            dflowBadge.className = 'flex items-center space-x-1.5 px-2.5 py-1 rounded-full bg-red-50 text-red-700 border border-red-200';
+            dflowBadge.innerHTML = `<span class="w-2 h-2 rounded-full bg-red-500"></span><span>DB D-Flow: ผิดพลาด</span>`;
+          }
+        }
+      } catch {
+        // ignore
+      }
+
+      try {
+        const tokenRes = await fetch('/api/token/status').then(r => r.json());
+        const tokenBadge = document.getElementById('token-badge');
+        if (tokenRes.success && tokenRes.data?.hasAccessToken) {
+          const user = tokenRes.data.accessToken?.username || 'Active';
+          tokenBadge.className = 'flex items-center space-x-1.5 px-2.5 py-1 rounded-full bg-blue-50 text-blue-700 border border-blue-200';
+          tokenBadge.innerHTML = `<span class="w-2 h-2 rounded-full bg-blue-500"></span><span>Token: ${user}</span>`;
+        }
+      } catch {
+        // ignore
+      }
+    }
+
+    // Load specialties dropdown
+    async function loadSpecialties() {
+      const select = document.getElementById('spclty');
+      try {
+        const res = await fetch('/api/specialties').then(r => r.json());
+        if (res.success && res.data) {
+          res.data.forEach(item => {
+            const opt = document.createElement('option');
+            opt.value = item.spclty;
+            opt.textContent = `${item.spclty} - ${item.name}`;
+            if (item.spclty === '02') {
+              opt.selected = true; // Default to 02 ศัลยกรรม as requested
+            }
+            select.appendChild(opt);
+          });
+        }
+      } catch (err) {
+        console.error('Failed to load specialties:', err);
+      }
+    }
+
+    // Fetch patient visits from Express API
+    async function fetchVisits() {
+      const vstdate = document.getElementById('vstdate').value;
+      const spclty = document.getElementById('spclty').value;
+
+      const tbody = document.getElementById('visit-table-body');
+      tbody.innerHTML = `
+        <tr>
+          <td colspan="10" class="py-12 text-center text-slate-400">
+            <i data-lucide="loader-2" class="w-8 h-8 mx-auto animate-spin mb-2 text-emerald-600"></i>
+            <p>กำลังดึงข้อมูลผู้รับบริการจาก HOSxP...</p>
+          </td>
+        </tr>
+      `;
+      lucide.createIcons();
+
+      try {
+        const url = `/api/visits?vstdate=${encodeURIComponent(vstdate)}&spclty=${encodeURIComponent(spclty)}`;
+        const res = await fetch(url).then(r => r.json());
+
+        if (res.success && Array.isArray(res.data)) {
+          rawVisits = res.data;
+          updatePttypeDropdown();
+          updateKpis();
+          applyClientFilter();
+          showToast(`พบข้อมูลผู้รับบริการ ${rawVisits.length} รายการ`, 'success');
+        } else {
+          rawVisits = [];
+          updatePttypeDropdown();
+          tbody.innerHTML = `
+            <tr>
+              <td colspan="10" class="py-8 text-center text-red-500">
+                ไม่สามารถดึงข้อมูลได้: ${res.message || 'เกิดข้อผิดพลาด'}
+              </td>
+            </tr>
+          `;
+        }
+      } catch (err) {
+        tbody.innerHTML = `
+          <tr>
+            <td colspan="10" class="py-8 text-center text-red-500">
+              เกิดข้อผิดพลาดในการเชื่อมต่อเซิร์ฟเวอร์: ${err.message}
+            </td>
+          </tr>
+        `;
+      }
+    }
+
+    // Toggle dropdown menu for HOSxP Pttype checkbox filter
+    function togglePttypeDropdownMenu(e) {
+      if (e) e.stopPropagation();
+      const menu = document.getElementById('pttype-dropdown-menu');
+      const arrow = document.getElementById('pttype-dropdown-arrow');
+      if (!menu) return;
+      const isOpen = !menu.classList.contains('hidden');
+      if (isOpen) {
+        menu.classList.add('hidden');
+        if (arrow) arrow.classList.remove('rotate-180');
+      } else {
+        menu.classList.remove('hidden');
+        if (arrow) arrow.classList.add('rotate-180');
+        setTimeout(() => {
+          document.getElementById('pttype-search-input')?.focus();
+        }, 50);
+        lucide.createIcons();
+      }
+    }
+
+    // Close dropdown on click outside
+    document.addEventListener('click', (e) => {
+      const wrapper = document.getElementById('pttype-dropdown-wrapper');
+      const menu = document.getElementById('pttype-dropdown-menu');
+      const arrow = document.getElementById('pttype-dropdown-arrow');
+      if (wrapper && menu && !wrapper.contains(e.target)) {
+        menu.classList.add('hidden');
+        if (arrow) arrow.classList.remove('rotate-180');
+      }
+    });
+
+    // Extract and update unique HOSxP pttypes from rawVisits
+    function updatePttypeDropdown() {
+      const map = new Map();
+      rawVisits.forEach(v => {
+        const code = (v.pttype || '').trim();
+        const name = (v.pttypename || '').trim() || 'ไม่ระบุชื่อสิทธิ';
+        if (!code) return;
+        if (!map.has(code)) {
+          map.set(code, { pttype: code, pttypename: name, count: 0 });
+        }
+        map.get(code).count++;
+      });
+
+      distinctPttypes = Array.from(map.values()).sort((a, b) => b.count - a.count);
+      selectedPttypes = new Set(distinctPttypes.map(p => p.pttype));
+      renderPttypeDropdownList();
+    }
+
+    // Render checkbox items inside dropdown menu
+    function renderPttypeDropdownList() {
+      const container = document.getElementById('pttype-checkbox-list');
+      const label = document.getElementById('pttype-dropdown-label');
+      const topCount = document.getElementById('pttype-btn-count');
+      const menuBadge = document.getElementById('pttype-menu-badge');
+      const search = (document.getElementById('pttype-search-input')?.value || '').trim().toLowerCase();
+
+      if (distinctPttypes.length === 0) {
+        if (label) label.textContent = '-- ไม่มีข้อมูลสิทธิ --';
+        if (topCount) topCount.textContent = '0 สิทธิ';
+        if (menuBadge) menuBadge.textContent = '0 สิทธิ';
+        if (container) container.innerHTML = '<span class="text-slate-400 text-xs italic py-2 block text-center">ไม่พบข้อมูลสิทธิ</span>';
+        return;
+      }
+
+      const totalTypes = distinctPttypes.length;
+      const selectedCount = selectedPttypes.size;
+
+      if (selectedCount === totalTypes) {
+        if (label) label.textContent = `ทุกสิทธิการรักษา (${totalTypes} สิทธิ / ${rawVisits.length} ราย)`;
+        if (topCount) topCount.textContent = 'ทั้งหมด';
+        if (menuBadge) menuBadge.textContent = `เลือกทั้งหมด (${totalTypes}/${totalTypes})`;
+      } else if (selectedCount === 0) {
+        if (label) label.textContent = '-- ไม่ได้เลือกสิทธิ (0 สิทธิ) --';
+        if (topCount) topCount.textContent = '0 สิทธิ';
+        if (menuBadge) menuBadge.textContent = 'ไม่ได้เลือกสิทธิ';
+      } else if (selectedCount <= 2) {
+        const names = distinctPttypes.filter(p => selectedPttypes.has(p.pttype)).map(p => `[${p.pttype}] ${p.pttypename}`).join(', ');
+        if (label) label.textContent = names;
+        if (topCount) topCount.textContent = `${selectedCount} สิทธิ`;
+        if (menuBadge) menuBadge.textContent = `เลือกแล้ว ${selectedCount}/${totalTypes} สิทธิ`;
+      } else {
+        if (label) label.textContent = `เลือกแล้ว ${selectedCount} จาก ${totalTypes} สิทธิ`;
+        if (topCount) topCount.textContent = `${selectedCount}/${totalTypes} สิทธิ`;
+        if (menuBadge) menuBadge.textContent = `เลือกแล้ว ${selectedCount}/${totalTypes} สิทธิ`;
+      }
+
+      if (!container) return;
+
+      const filtered = distinctPttypes.filter(pt => {
+        if (!search) return true;
+        return pt.pttype.toLowerCase().includes(search) || pt.pttypename.toLowerCase().includes(search);
+      });
+
+      if (filtered.length === 0) {
+        container.innerHTML = `<span class="text-slate-400 text-xs italic py-2 block text-center">ไม่พบสิทธิที่ตรงกับ "${search}"</span>`;
+        return;
+      }
+
+      let html = '';
+      filtered.forEach(pt => {
+        const isChecked = selectedPttypes.has(pt.pttype);
+        html += `
+          <label class="flex items-center justify-between px-2.5 py-1.5 rounded-lg text-xs cursor-pointer select-none transition ${isChecked ? 'bg-emerald-50/70 text-slate-800' : 'hover:bg-slate-50 text-slate-600'}">
+            <div class="flex items-center space-x-2 truncate pr-2">
+              <input type="checkbox" value="${pt.pttype}" ${isChecked ? 'checked' : ''} onchange="togglePttype('${pt.pttype}', this.checked)" class="w-3.5 h-3.5 rounded text-emerald-600 focus:ring-emerald-500 border-slate-300">
+              <span class="font-mono font-bold text-[11px] ${isChecked ? 'text-emerald-700' : 'text-slate-500'}">[${pt.pttype}]</span>
+              <span class="truncate font-medium" title="${pt.pttypename}">${pt.pttypename}</span>
+            </div>
+            <span class="px-1.5 py-0.5 rounded-full text-[10px] font-semibold shrink-0 ${isChecked ? 'bg-emerald-200 text-emerald-800' : 'bg-slate-100 text-slate-500'}">
+              ${pt.count} ราย
+            </span>
+          </label>
+        `;
+      });
+
+      container.innerHTML = html;
+    }
+
+    function togglePttype(pttype, isChecked) {
+      if (isChecked) {
+        selectedPttypes.add(pttype);
+      } else {
+        selectedPttypes.delete(pttype);
+      }
+      renderPttypeDropdownList();
+      applyClientFilter();
+    }
+
+    function selectAllPttypes(selectAll) {
+      if (selectAll) {
+        selectedPttypes = new Set(distinctPttypes.map(p => p.pttype));
+      } else {
+        selectedPttypes.clear();
+      }
+      renderPttypeDropdownList();
+      applyClientFilter();
+    }
+
+    function filterPttypeDropdownList() {
+      renderPttypeDropdownList();
+    }
+
+    // Update KPI counters
+    function updateKpis() {
+      const total = rawVisits.length;
+      const dflowSaved = rawVisits.filter(v => v.dflow_saved).length;
+      const hasAuthHos = rawVisits.filter(v => v.auth_code && v.auth_code.trim()).length;
+      const hasAuthApi = rawVisits.filter(v => {
+        const claim = v.dflow_data?.claim_code || v.auth_code_from_api;
+        return Boolean(claim && claim.trim());
+      }).length;
+      const noAuth = rawVisits.filter(v => {
+        const hos = Boolean(v.auth_code && v.auth_code.trim());
+        const api = Boolean((v.dflow_data?.claim_code && v.dflow_data.claim_code.trim()) || (v.auth_code_from_api && v.auth_code_from_api.trim()));
+        return !hos && !api;
+      }).length;
+
+      const elTotal = document.getElementById('kpi-total');
+      if (elTotal) elTotal.textContent = total.toLocaleString();
+
+      const elDflow = document.getElementById('kpi-dflow-saved');
+      if (elDflow) elDflow.textContent = dflowSaved.toLocaleString();
+
+      const elHos = document.getElementById('kpi-has-auth-hos');
+      if (elHos) elHos.textContent = hasAuthHos.toLocaleString();
+
+      const elApi = document.getElementById('kpi-has-auth-api');
+      if (elApi) elApi.textContent = hasAuthApi.toLocaleString();
+
+      const elNo = document.getElementById('kpi-no-auth');
+      if (elNo) elNo.textContent = noAuth.toLocaleString();
+    }
+
+    // Filter tab handler
+    function setAuthFilter(filter) {
+      currentAuthFilter = filter;
+      ['tab-all', 'tab-unsaved-dflow', 'tab-no-auth'].forEach(id => {
+        const el = document.getElementById(id);
+        if (el) el.className = 'px-3 py-1 rounded-md text-slate-600 hover:text-slate-800 transition';
+      });
+
+      const activeTabMap = {
+        'all': 'tab-all',
+        'unsaved_dflow': 'tab-unsaved-dflow',
+        'no_auth': 'tab-no-auth'
+      };
+
+      const activeId = activeTabMap[filter] || 'tab-all';
+      const activeEl = document.getElementById(activeId);
+      if (activeEl) {
+        activeEl.className = 'px-3 py-1 rounded-md bg-white text-slate-800 shadow-sm transition font-semibold';
+      }
+
+      applyClientFilter();
+    }
+
+    // Apply Client side search & auth filter
+    function applyClientFilter() {
+      const search = (document.getElementById('quick-search').value || '').trim().toLowerCase();
+
+      const filtered = rawVisits.filter(v => {
+        // HOSxP Pttype checkbox filter
+        if (distinctPttypes.length > 0) {
+          const pt = (v.pttype || '').trim();
+          if (!selectedPttypes.has(pt)) {
+            return false;
+          }
+        }
+
+        const hasHosAuth = Boolean(v.auth_code && v.auth_code.trim());
+        const hasApiAuth = Boolean((v.dflow_data?.claim_code && v.dflow_data.claim_code.trim()) || (v.auth_code_from_api && v.auth_code_from_api.trim()));
+
+        // Tab filters
+        if (currentAuthFilter === 'unsaved_dflow' && v.dflow_saved) return false;
+        if (currentAuthFilter === 'no_auth' && (hasHosAuth || hasApiAuth)) return false;
+
+        // Search text
+        if (search) {
+          const hn = (v.hn || '').toLowerCase();
+          const cid = (v.cid || '').toLowerCase();
+          const name = (v.ptname || '').toLowerCase();
+          const vn = (v.vn || '').toLowerCase();
+          if (!hn.includes(search) && !cid.includes(search) && !name.includes(search) && !vn.includes(search)) {
+            return false;
+          }
+        }
+        return true;
+      });
+
+      renderTable(filtered);
+    }
+
+    // Render content for Authen Code (HOS) cell
+    function renderAuthenHosCell(visit) {
+      if (visit.auth_code && visit.auth_code.trim()) {
+        const code = visit.auth_code.trim();
+        return `
+          <div class="inline-flex items-center space-x-1">
+            <span class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold bg-emerald-100 text-emerald-800 border border-emerald-300 font-mono shadow-2xs">
+              <i data-lucide="check" class="w-3.5 h-3.5 mr-1 text-emerald-600"></i>${code}
+            </span>
+            <button type="button" onclick="event.stopPropagation(); copyToClipboard('${code}')" title="คัดลอกรหัส HOS" class="text-slate-400 hover:text-emerald-700 p-0.5 rounded hover:bg-emerald-50 transition">
+              <i data-lucide="copy" class="w-3.5 h-3.5"></i>
+            </button>
+          </div>
+        `;
+      }
+      return `<span class="text-slate-400 text-sm italic">-</span>`;
+    }
+
+    // Render content for Authen Code (API) cell
+    function renderAuthenApiCell(visit) {
+      const apiAuthCode = (visit.dflow_data?.claim_code && visit.dflow_data.claim_code.trim()) || 
+                          (visit.auth_code_from_api && visit.auth_code_from_api.trim());
+      const hosAuthCode = (visit.auth_code && visit.auth_code.trim()) || '';
+      const isMismatch = Boolean(hosAuthCode && apiAuthCode && hosAuthCode.toLowerCase() !== apiAuthCode.toLowerCase());
+
+      if (apiAuthCode) {
+        return `
+          <div class="space-y-1">
+            <div class="inline-flex items-center space-x-1">
+              <button onclick="viewAuthenHistory('${visit.cid}', '${visit.ptname || ''}', '${visit.vn}')" title="คลิกดูประวัติ Authen สปสช." class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold bg-blue-100 text-blue-900 border border-blue-300 hover:bg-blue-200 transition font-mono shadow-2xs">
+                <i data-lucide="badge-check" class="w-3.5 h-3.5 mr-1 text-blue-600"></i>${apiAuthCode}
+              </button>
+              <button type="button" onclick="event.stopPropagation(); copyToClipboard('${apiAuthCode}')" title="คัดลอกรหัส API" class="text-slate-400 hover:text-blue-700 p-0.5 rounded hover:bg-blue-50 transition">
+                <i data-lucide="copy" class="w-3.5 h-3.5"></i>
+              </button>
+            </div>
+            ${isMismatch ? `<div><span class="text-xs font-semibold text-rose-700 bg-rose-50 px-2 py-0.5 rounded border border-rose-200 inline-flex items-center shadow-2xs" title="รหัส Authen สปสช. (${apiAuthCode}) ไม่ตรงกับใน HOSxP (${hosAuthCode})"><i data-lucide="alert-circle" class="w-3.5 h-3.5 mr-1 text-rose-600"></i>ไม่ตรงกับ Hosxp</span></div>` : ''}
+          </div>
+        `;
+      }
+
+      if (visit.dflow_saved) {
+        return `
+          <div class="space-y-1">
+            <span class="inline-flex items-center text-xs text-slate-500 bg-slate-100 px-2 py-0.5 rounded border border-slate-200">
+              ไม่พบรหัสวันนี้
+            </span>
+            <button onclick="viewAuthenHistory('${visit.cid}', '${visit.ptname || ''}', '${visit.vn}')" class="text-xs text-blue-600 hover:underline block mx-auto">
+              ดูประวัติ
+            </button>
+          </div>
+        `;
+      }
+
+      return `
+        <button onclick="viewAuthenHistory('${visit.cid}', '${visit.ptname || ''}', '${visit.vn}')" title="คลิกเพื่อตรวจสอบว่ามี Authen Code สปสช. วันนี้หรือไม่" class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium bg-slate-100 hover:bg-slate-200 text-slate-600 border border-slate-300 transition">
+          <i data-lucide="search" class="w-3.5 h-3.5 mr-1 text-slate-400"></i>กดเช็ค สปสช.
+        </button>
+      `;
+    }
+
+    // Render table rows
+    function renderTable(visits) {
+      const tbody = document.getElementById('visit-table-body');
+      document.getElementById('table-count-badge').textContent = `${visits.length} รายการ`;
+
+      if (visits.length === 0) {
+        tbody.innerHTML = `
+          <tr>
+            <td colspan="10" class="py-12 text-center text-slate-400">
+              <i data-lucide="search-x" class="w-8 h-8 mx-auto mb-2 text-slate-300"></i>
+              <p>ไม่พบข้อมูลผู้รับบริการตามเงื่อนไขที่เลือก</p>
+            </td>
+          </tr>
+        `;
+        lucide.createIcons();
+        return;
+      }
+
+      let html = '';
+      visits.forEach((v, idx) => {
+        const timeStr = v.vn && v.vn.length >= 12 ? `${v.vn.slice(6, 8)}:${v.vn.slice(8, 10)}:${v.vn.slice(10, 12)}` : '-';
+        const nhsoData = nhsoCache.get(v.cid);
+
+        html += `
+          <tr id="row-vn-${v.vn}" class="hover:bg-slate-50 transition border-b border-slate-100">
+            <td class="py-3 px-3 text-center text-slate-400 font-mono text-sm">${idx + 1}</td>
+            <td class="py-3 px-3 font-mono">
+              <div class="font-semibold text-slate-800 text-sm">${timeStr}</div>
+              <div class="text-xs text-slate-400">${v.vn || '-'}</div>
+            </td>
+            <!-- Combined HN & CID Column -->
+            <td class="py-3 px-3 font-mono">
+              <div class="font-bold text-emerald-700 text-sm">${v.hn || '-'}</div>
+              <div class="text-xs text-slate-500 flex items-center space-x-1 mt-0.5">
+                <span>${v.cid || '-'}</span>
+                ${v.cid ? `<button type="button" onclick="event.stopPropagation(); copyToClipboard('${v.cid}')" title="คัดลอก CID" class="text-slate-400 hover:text-slate-700 p-0.5 rounded hover:bg-slate-200 transition"><i data-lucide="copy" class="w-3.5 h-3.5"></i></button>` : ''}
+              </div>
+            </td>
+            <td class="py-3 px-3">
+              <div class="font-medium text-slate-900 text-sm">${v.ptname || 'ไม่มีชื่อ'}</div>
+              <div class="text-xs text-slate-400">${v.spclty_name || ''}</div>
+            </td>
+            <td class="py-3 px-3">
+              <div class="font-medium text-slate-800 text-sm">${v.pttypename || '-'}</div>
+              <div class="text-xs text-slate-400">รหัส: ${v.pttype || '-'} ${v.pttypeno ? `(เลขที่ ${v.pttypeno})` : ''}</div>
+            </td>
+            <td class="py-3 px-3 text-slate-600">
+              <div class="text-sm">หลัก: ${v.hospmain || '-'}</div>
+              <div class="text-xs text-slate-400">รอง: ${v.hospsub || '-'}</div>
+            </td>
+            <!-- Authen Code (HOS) Column -->
+            <td class="py-3 px-3 text-center" id="auth-hos-cell-${v.vn}">
+              ${renderAuthenHosCell(v)}
+            </td>
+            <!-- NHSO Right Column -->
+            <td class="py-3 px-3" id="nhso-cell-${v.vn}">
+              ${renderNhsoCell(nhsoData, v)}
+            </td>
+            <!-- Authen Code (API) Column -->
+            <td class="py-3 px-3 text-center" id="auth-api-cell-${v.vn}">
+              ${renderAuthenApiCell(v)}
+            </td>
+            <!-- Staff Column -->
+            <td class="py-3 px-3 font-mono text-slate-600">
+              <span class="px-2.5 py-0.5 rounded bg-slate-100 text-slate-700 text-xs font-medium border border-slate-200" title="ผู้บันทึก: ${v.staff || '-'}">
+                ${v.staff || '-'}
+              </span>
+            </td>
+          </tr>
+        `;
+      });
+
+      tbody.innerHTML = html;
+      lucide.createIcons();
+    }
+
+    // Render content for NHSO status cell
+    function renderNhsoCell(nhsoData, visit) {
+      // 1. If we have saved dflow_data:
+      const dflow = visit.dflow_data;
+      if (!nhsoData && dflow) {
+        const isHospMatch = visit.hospmain && dflow.hospmain_code && visit.hospmain.trim() === dflow.hospmain_code.trim();
+        return `
+          <div onclick="viewRightDbDetail('${visit.vn}')" class="cursor-pointer group p-1.5 -m-1 rounded-lg hover:bg-blue-50/80 transition border border-transparent hover:border-blue-200 space-y-0.5" title="คลิกเพื่อดูรายละเอียดสิทธิ์การรักษาที่บันทึกใน DB">
+            <div class="flex items-center justify-between">
+              <div class="font-semibold text-blue-700 text-sm leading-tight group-hover:underline flex items-center space-x-1">
+                <span>${dflow.maininscl_name || '-'}</span>
+                <i data-lucide="external-link" class="w-3 h-3 text-blue-400 group-hover:text-blue-600 transition"></i>
+              </div>
+              <span class="text-[10px] bg-emerald-50 text-emerald-700 border border-emerald-200 px-1 py-0.2 rounded font-mono font-medium">DB</span>
+            </div>
+            ${dflow.subinscl_name ? `<div class="text-xs text-slate-500">${dflow.subinscl_name}</div>` : ''}
+            <div class="text-xs text-slate-600 flex items-center space-x-1">
+              <span>รพ.หลัก: ${dflow.hospmain_name || dflow.hospmain_code || '-'}</span>
+              ${isHospMatch ? `<span class="text-emerald-600 font-bold" title="ตรงกับ HOSxP">✓</span>` : ''}
+            </div>
+          </div>
+        `;
+      }
+
+      if (!nhsoData) {
+        return `
+          <div onclick="viewRightDbDetail('${visit.vn}')" class="cursor-pointer group p-1.5 -m-1 rounded-lg hover:bg-slate-100 transition border border-transparent hover:border-slate-200 inline-flex items-center space-x-1.5 text-slate-400 hover:text-blue-600 text-sm italic" title="คลิกเพื่อตรวจสอบสิทธิและดูรายละเอียด">
+            <i data-lucide="search" class="w-3.5 h-3.5 text-slate-400 group-hover:text-blue-600 transition"></i>
+            <span>ยังไม่ได้ตรวจสอบ</span>
+          </div>
+        `;
+      }
+
+      if (nhsoData.error) {
+        return `
+          <div onclick="viewRightDbDetail('${visit.vn}')" class="cursor-pointer group p-1 -m-1 rounded-lg hover:bg-red-50 transition border border-transparent hover:border-red-200" title="คลิกเพื่อตรวจสอบอีกครั้ง">
+            <span class="text-red-500 text-xs flex items-center"><i data-lucide="alert-triangle" class="w-3.5 h-3.5 inline mr-1"></i>${nhsoData.error}</span>
+          </div>
+        `;
+      }
+
+      const fund = nhsoData.funds?.[0];
+      if (!fund) {
+        return `
+          <div onclick="viewRightDbDetail('${visit.vn}')" class="cursor-pointer group p-1 -m-1 rounded-lg hover:bg-amber-50 transition border border-transparent hover:border-amber-200" title="คลิกเพื่อดูรายละเอียด">
+            <span class="text-amber-600 text-xs">ไม่พบกองทุนในระบบ สปสช.</span>
+          </div>
+        `;
+      }
+
+      const mainInscl = fund.mainInscl?.name || '-';
+      const subInscl = fund.subInscl?.name || '';
+      const hospMainName = fund.hospMain?.hname || fund.hospMain?.hcode || '-';
+      const hospMainCode = fund.hospMain?.hcode || '';
+
+      // Simple match check with HOS hospmain
+      const isHospMatch = visit.hospmain && hospMainCode && visit.hospmain.trim() === hospMainCode.trim();
+
+      return `
+        <div onclick="viewRightDbDetail('${visit.vn}')" class="cursor-pointer group p-1.5 -m-1 rounded-lg hover:bg-blue-50/80 transition border border-transparent hover:border-blue-200 space-y-0.5" title="คลิกเพื่อดูรายละเอียดสิทธิ์การรักษาที่บันทึกใน DB">
+          <div class="flex items-center justify-between">
+            <div class="font-semibold text-blue-700 text-sm leading-tight group-hover:underline flex items-center space-x-1">
+              <span>${mainInscl}</span>
+              <i data-lucide="external-link" class="w-3 h-3 text-blue-400 group-hover:text-blue-600 transition"></i>
+            </div>
+            ${visit.dflow_saved ? `<span class="text-[10px] bg-emerald-50 text-emerald-700 border border-emerald-200 px-1 py-0.2 rounded font-mono font-medium">DB</span>` : ''}
+          </div>
+          ${subInscl ? `<div class="text-xs text-slate-500">${subInscl}</div>` : ''}
+          <div class="text-xs text-slate-600 flex items-center space-x-1">
+            <span>รพ.หลัก: ${hospMainName}</span>
+            ${isHospMatch ? `<span class="text-emerald-600 font-bold" title="ตรงกับ HOSxP">✓</span>` : ''}
+          </div>
+        </div>
+      `;
+    }
+
+    // Check right & authen for a single visit and save to d-flow
+    async function checkAndSaveSingle(vn, cid) {
+      if (!vn || !cid) return;
+      const btn = document.getElementById(`btn-save-${vn}`);
+      const vstdate = document.getElementById('vstdate').value || new Date().toISOString().slice(0, 10);
+
+      if (btn) btn.disabled = true;
+
+      try {
+        const res = await fetch('/api/vn-authen/check-and-save', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ vn, cid, vstdate, force: true })
+        }).then(r => r.json());
+
+        if (res.success && res.data) {
+          const visit = rawVisits.find(v => v.vn === vn);
+          if (visit) {
+            visit.dflow_saved = true;
+            visit.dflow_data = res.data;
+            if (res.data.claim_code) {
+              visit.auth_code_from_api = res.data.claim_code;
+            }
+            updateSingleRowDOM(visit);
+          }
+          showToast(`บันทึก VN ${vn} ลงตาราง vn_nhso_authen แล้ว`, 'success');
+        } else {
+          showToast(`เกิดข้อผิดพลาด: ${res.message || 'ไม่สามารถบันทึกได้'}`, 'error');
+        }
+      } catch (err) {
+        showToast(`เกิดข้อผิดพลาด: ${err.message}`, 'error');
+      } finally {
+        if (btn) btn.disabled = false;
+        updateKpis();
+        lucide.createIcons();
+      }
+    }
+
+    // Helper to update cells for a single row in DOM
+    function updateSingleRowDOM(visit) {
+      const authHosCell = document.getElementById(`auth-hos-cell-${visit.vn}`);
+      const nhsoCell = document.getElementById(`nhso-cell-${visit.vn}`);
+      const authApiCell = document.getElementById(`auth-api-cell-${visit.vn}`);
+
+      if (authHosCell) {
+        authHosCell.innerHTML = renderAuthenHosCell(visit);
+      }
+      if (nhsoCell) {
+        nhsoCell.innerHTML = renderNhsoCell(null, visit);
+      }
+      if (authApiCell) {
+        authApiCell.innerHTML = renderAuthenApiCell(visit);
+      }
+      lucide.createIcons();
+    }
+
+    // Batch check & save to d-flow ONLY for visits not yet saved
+    async function batchCheckAndSaveDflow() {
+      const toCheck = rawVisits.filter(v => !v.dflow_saved && v.cid && v.cid.length === 13);
+      if (toCheck.length === 0) {
+        showToast('ตรวจสอบข้อมูลผู้รับบริการทุกรายครบแล้ว!', 'info');
+        return;
+      }
+
+      if (isBatchRunning) return;
+      isBatchRunning = true;
+      shouldStopBatch = false;
+
+      const container = document.getElementById('batch-progress-container');
+      const progressBar = document.getElementById('batch-progress-bar');
+      const statusText = document.getElementById('batch-status-text');
+      const btnBatch = document.getElementById('btn-batch-check');
+
+      container.classList.remove('hidden');
+      btnBatch.disabled = true;
+      btnBatch.classList.add('opacity-50');
+
+      let completed = 0;
+      let successCount = 0;
+      const total = toCheck.length;
+      const vstdate = document.getElementById('vstdate').value || new Date().toISOString().slice(0, 10);
+
+      for (const visit of toCheck) {
+        if (shouldStopBatch) {
+          showToast('หยุดการตรวจสอบแบบกลุ่มแล้ว', 'info');
+          break;
+        }
+
+        statusText.textContent = `กำลังตรวจสอบสิทธิ & Authen... (${completed + 1}/${total}) - VN: ${visit.vn} HN: ${visit.hn || '-'}`;
+        progressBar.style.width = `${Math.round(((completed) / total) * 100)}%`;
+
+        try {
+          const res = await fetch('/api/vn-authen/check-and-save', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ vn: visit.vn, cid: visit.cid, vstdate })
+          }).then(r => r.json());
+
+          if (res.success && res.data) {
+            visit.dflow_saved = true;
+            visit.dflow_data = res.data;
+            if (res.data.claim_code) {
+              visit.auth_code_from_api = res.data.claim_code;
+            }
+            successCount++;
+            updateSingleRowDOM(visit);
+          }
+        } catch (err) {
+          console.error(`Error saving VN ${visit.vn}:`, err);
+        }
+
+        completed++;
+        updateKpis();
+
+        // Delay 150ms between requests
+        await new Promise(r => setTimeout(r, 150));
+      }
+
+      progressBar.style.width = '100%';
+      statusText.textContent = `ตรวจสอบข้อมูลเสร็จสิ้น (${successCount}/${total} รายการ)`;
+      showToast(`ตรวจสอบข้อมูลสำเร็จ ${successCount} รายการ`, 'success');
+
+      setTimeout(() => {
+        container.classList.add('hidden');
+        btnBatch.disabled = false;
+        btnBatch.classList.remove('opacity-50');
+        isBatchRunning = false;
+        applyClientFilter();
+      }, 1500);
+    }
+
+    function stopBatchCheck() {
+      shouldStopBatch = true;
+    }
+
+    // Format Thai Date & Time (Buddhist Era: YYYY + 543)
+    // Format Thai Date & Time (Buddhist Era: YYYY + 543, handles ISO string and epoch ms)
+    function formatThaiDateTime(isoStr) {
+      if (!isoStr && isoStr !== 0) return '-';
+      try {
+        let d;
+        if (typeof isoStr === 'number' || (!isNaN(isoStr) && !isNaN(Number(isoStr)) && String(isoStr).trim().length >= 10)) {
+          d = new Date(Number(isoStr));
+        } else if (typeof isoStr === 'string') {
+          const clean = isoStr.trim().replace(' ', 'T');
+          d = new Date(clean);
+        } else if (isoStr instanceof Date) {
+          d = isoStr;
+        } else {
+          return '-';
+        }
+        if (isNaN(d.getTime())) return String(isoStr);
+        const day = String(d.getDate()).padStart(2, '0');
+        const month = String(d.getMonth() + 1).padStart(2, '0');
+        const yearBE = d.getFullYear() + 543;
+        const hh = String(d.getHours()).padStart(2, '0');
+        const mm = String(d.getMinutes()).padStart(2, '0');
+        const ss = String(d.getSeconds()).padStart(2, '0');
+        return `${day}/${month}/${yearBE} ${hh}:${mm}:${ss} น.`;
+      } catch {
+        return String(isoStr);
+      }
+    }
+
+    // State for modal pagination
+    let modalHistoryData = [];
+    let modalCurrentPage = 1;
+    let modalPageSize = 50;
+    let modalCurrentCid = '';
+    let modalCurrentPtname = '';
+    let modalCurrentVstdate = '';
+    let modalCurrentVn = null;
+    let modalDateFrom = '';
+    let modalDateTo = '';
+
+    // Helper badges for modal
+    function renderClaimAuthenBadge(code) {
+      if (!code || code === '-') return '<span class="text-slate-400 font-mono">-</span>';
+      const c = String(code).trim();
+      const upper = c.toUpperCase();
+      if (upper === 'KOS') {
+        return `<span class="px-2.5 py-0.5 rounded-full bg-teal-50 border border-teal-200 text-teal-800 font-semibold text-xs inline-flex items-center gap-1 shadow-2xs font-mono"><span class="w-1.5 h-1.5 rounded-full bg-teal-500"></span> ${c}</span>`;
+      }
+      if (upper === 'SMC') {
+        return `<span class="px-2.5 py-0.5 rounded-full bg-indigo-50 border border-indigo-200 text-indigo-800 font-semibold text-xs inline-flex items-center gap-1 shadow-2xs font-mono"><span class="w-1.5 h-1.5 rounded-full bg-indigo-500"></span> ${c}</span>`;
+      }
+      if (upper === 'API') {
+        return `<span class="px-2.5 py-0.5 rounded-full bg-purple-50 border border-purple-200 text-purple-800 font-semibold text-xs inline-flex items-center gap-1 shadow-2xs font-mono"><span class="w-1.5 h-1.5 rounded-full bg-purple-500"></span> ${c}</span>`;
+      }
+      if (upper === 'INP') {
+        return `<span class="px-2.5 py-0.5 rounded-full bg-amber-50 border border-amber-200 text-amber-800 font-semibold text-xs inline-flex items-center gap-1 shadow-2xs font-mono"><span class="w-1.5 h-1.5 rounded-full bg-amber-500"></span> ${c}</span>`;
+      }
+      return `<span class="px-2.5 py-0.5 rounded-full bg-slate-100 border border-slate-200 text-slate-700 font-medium text-xs shadow-2xs font-mono">${c}</span>`;
+    }
+
+    function renderSourceChannelBadge(channel) {
+      const ch = String(channel || '').trim().toUpperCase();
+      if (ch === 'AUTHENCODE') {
+        return `<span class="px-2.5 py-0.5 rounded-full bg-emerald-100 border border-emerald-300 text-emerald-800 font-bold text-xs shadow-2xs inline-flex items-center gap-1"><span class="w-1.5 h-1.5 rounded-full bg-emerald-600"></span> AUTHENCODE</span>`;
+      }
+      if (ch === 'ENDPOINT') {
+        return `<span class="px-2.5 py-0.5 rounded-full bg-amber-50 border border-amber-300 text-amber-800 font-medium text-xs shadow-2xs">ENDPOINT</span>`;
+      }
+      if (!ch) return `<span class="text-slate-400">-</span>`;
+      return `<span class="px-2.5 py-0.5 rounded-full bg-slate-100 border border-slate-200 text-slate-700 font-medium text-xs">${ch}</span>`;
+    }
+
+    // View Authen History modal
+    async function viewAuthenHistory(cid, ptname, vn = null) {
+      if (!cid) return;
+      modalCurrentCid = cid;
+      modalCurrentPtname = ptname || '';
+      modalCurrentVn = vn;
+
+      // ช่วงวันที่ค้นหา เอาแค่วันเดียวพอ ก็วันที่ vn ใน hos
+      const foundVisit = vn ? rawVisits.find(v => v.vn === vn) : rawVisits.find(v => v.cid === cid);
+      modalCurrentVstdate = foundVisit?.vstdate || document.getElementById('vstdate').value || new Date().toISOString().slice(0, 10);
+      modalCurrentPage = 1;
+
+      // วันที่ค้นหา กำหนดเป็นวันเดียวตรงกับวันที่รับบริการของ VN
+      modalDateFrom = modalCurrentVstdate;
+      modalDateTo = modalCurrentVstdate;
+
+      const modal = document.getElementById('history-modal');
+      const title = document.getElementById('modal-title');
+      const subtitle = document.getElementById('modal-subtitle');
+      const body = document.getElementById('modal-body');
+
+      title.textContent = `ประวัติการ Authen: ${modalCurrentPtname}`;
+      subtitle.textContent = `เลขประจำตัวประชาชน (PID / CID): ${cid} | วันที่รับบริการ: ${modalCurrentVstdate}`;
+      body.innerHTML = `
+        <div class="text-center py-12 text-slate-400">
+          <i data-lucide="loader-2" class="w-8 h-8 mx-auto animate-spin mb-2 text-blue-600"></i>
+          <p>กำลังดึงประวัติการ Authen ประจำวันที่ ${modalCurrentVstdate} จากระบบ สปสช....</p>
+        </div>
+      `;
+      modal.classList.remove('hidden');
+      lucide.createIcons();
+
+      await loadHistoryData();
+    }
+
+    // Fetch history data with current date range
+    async function loadHistoryData() {
+      const body = document.getElementById('modal-body');
+      try {
+        const url = `/api/authen-history/${modalCurrentCid}?vstdate=${modalCurrentVstdate}&claimDateFrom=${modalDateFrom}&claimDateTo=${modalDateTo}`;
+        const res = await fetch(url).then(r => r.json());
+        if (res.success && Array.isArray(res.data) && res.data.length > 0) {
+          modalHistoryData = res.data;
+
+          // Check if there is an authen code for selected vstdate (favoring sourceChannel: "AUTHENCODE")
+          const todayAuth = modalHistoryData.find(item => {
+            const rawDate = item.claimDate || item.receivedDateTime || item.createDate || '';
+            if (!String(rawDate).startsWith(modalCurrentVstdate)) return false;
+            const ch = String(item.sourceChannel || item.source_channel || '').trim().toUpperCase();
+            return ch === 'AUTHENCODE';
+          }) || modalHistoryData.find(item => {
+            const rawDate = item.claimDate || item.receivedDateTime || item.createDate || '';
+            if (!String(rawDate).startsWith(modalCurrentVstdate)) return false;
+            const ch = String(item.sourceChannel || item.source_channel || '').trim().toUpperCase();
+            return ch !== 'ENDPOINT';
+          }) || modalHistoryData.find(item => {
+            const rawDate = item.claimDate || item.receivedDateTime || item.createDate || '';
+            return String(rawDate).startsWith(modalCurrentVstdate);
+          }) || null;
+
+          const foundVisit = modalCurrentVn ? rawVisits.find(v => v.vn === modalCurrentVn) : rawVisits.find(v => v.cid === modalCurrentCid);
+          const hosAuth = (foundVisit?.auth_code || '').trim();
+          const isModalMismatch = Boolean(hosAuth && todayAuth && hosAuth.toLowerCase() !== todayAuth.claimCode.trim().toLowerCase());
+
+          // 1. Alert Banner for Selected Date
+          let bannerHtml = '';
+          if (todayAuth) {
+            bannerHtml = `
+              <div class="p-3.5 ${isModalMismatch ? 'bg-rose-50 border-rose-300' : 'bg-emerald-50 border-emerald-300'} border rounded-xl flex flex-wrap items-center justify-between gap-3 shadow-sm">
+                <div class="flex items-center space-x-3">
+                  <div class="w-8 h-8 rounded-full ${isModalMismatch ? 'bg-rose-600' : 'bg-emerald-600'} text-white flex items-center justify-center font-bold text-sm shadow-sm">${isModalMismatch ? '!' : '✓'}</div>
+                  <div>
+                    <div class="text-sm font-bold ${isModalMismatch ? 'text-rose-900' : 'text-emerald-900'} flex flex-wrap items-center gap-2">
+                      <span>พบ Authen Code วันนี้แล้ว (${modalCurrentVstdate}):</span>
+                      <span class="px-2 py-0.5 ${isModalMismatch ? 'bg-rose-700' : 'bg-emerald-700'} text-white rounded font-mono text-xs tracking-wider">${todayAuth.claimCode}</span>
+                      ${renderClaimAuthenBadge(todayAuth.claimAuthen)}
+                      ${renderSourceChannelBadge(todayAuth.sourceChannel)}
+                      ${isModalMismatch ? `<span class="px-2 py-0.5 bg-rose-100 text-rose-800 border border-rose-300 rounded text-xs font-semibold flex items-center"><i data-lucide="alert-circle" class="w-3.5 h-3.5 mr-1 text-rose-600"></i>ไม่ตรงกับ Hosxp (${hosAuth})</span>` : (hosAuth ? `<span class="px-2 py-0.5 bg-emerald-100 text-emerald-800 border border-emerald-300 rounded text-xs font-medium flex items-center"><i data-lucide="check" class="w-3.5 h-3.5 mr-1 text-emerald-600"></i>ตรงกับใน HOSxP</span>` : '')}
+                    </div>
+                    <div class="text-xs ${isModalMismatch ? 'text-rose-700' : 'text-emerald-700'} mt-1 space-x-2">
+                      <span>วันรับบริการ: <b>${formatThaiDateTime(todayAuth.claimDate || todayAuth.receivedDateTime)}</b></span>
+                      <span>|</span>
+                      <span>วันที่บันทึก: <b>${formatThaiDateTime(todayAuth.createDate)}</b></span>
+                      <span>|</span>
+                      <span>บริการ: ${todayAuth.claimTypeName || todayAuth.claimTypePackage || '-'}</span>
+                      <span>|</span>
+                      <span>หน่วยบริการ: ${todayAuth.hmain || todayAuth.hcode || '-'} : ${todayAuth.hname || '-'}</span>
+                    </div>
+                  </div>
+                </div>
+                <button type="button" onclick="event.stopPropagation(); copyToClipboard('${todayAuth.claimCode}')" class="px-3 py-1.5 bg-white border ${isModalMismatch ? 'border-rose-300 hover:bg-rose-100 text-rose-800' : 'border-emerald-300 hover:bg-emerald-100 text-emerald-800'} rounded-lg text-xs font-semibold transition flex items-center space-x-1 shadow-sm">
+                  <i data-lucide="copy" class="w-3.5 h-3.5"></i>
+                  <span>คัดลอกรหัส</span>
+                </button>
+              </div>
+            `;
+
+            // Auto-update main table data & row badge
+            if (foundVisit) {
+              foundVisit.auth_code_from_api = todayAuth.claimCode;
+              updateSingleRowDOM(foundVisit);
+
+              // Auto save to d-flow if not yet saved
+              if (!foundVisit.dflow_saved && foundVisit.vn && foundVisit.cid) {
+                fetch('/api/vn-authen/check-and-save', {
+                  method: 'POST',
+                  headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify({ vn: foundVisit.vn, cid: foundVisit.cid, vstdate: modalCurrentVstdate })
+                }).then(r => r.json()).then(saveRes => {
+                  if (saveRes.success && saveRes.data) {
+                    foundVisit.dflow_saved = true;
+                    foundVisit.dflow_data = saveRes.data;
+                    updateSingleRowDOM(foundVisit);
+                    updateKpis();
+                  }
+                }).catch(() => {});
+              }
+            }
+            updateKpis();
+          } else {
+            bannerHtml = `
+              <div class="p-3.5 bg-amber-50 border border-amber-300 rounded-xl flex flex-wrap items-center justify-between gap-3 shadow-sm">
+                <div class="flex items-center space-x-3">
+                  <div class="w-8 h-8 rounded-full bg-amber-500 text-white flex items-center justify-center font-bold text-sm shadow-sm">!</div>
+                  <div>
+                    <div class="text-sm font-bold text-amber-900">
+                      ยังไม่พบ Authen Code สำหรับวันที่ ${modalCurrentVstdate}
+                    </div>
+                    <div class="text-xs text-amber-700 mt-0.5">
+                      ผู้ป่วยยังไม่ได้ขอรหัส Authen ในวันที่เลือก (${modalCurrentVstdate})
+                    </div>
+                  </div>
+                </div>
+                <span class="px-2.5 py-1 bg-amber-100 text-amber-800 border border-amber-300 rounded-lg text-xs font-semibold">
+                  ยังไม่มี Authen วันนี้
+                </span>
+              </div>
+            `;
+          }
+
+          // 2. Date Range Filter Toolbar (ให้เลือกช่วงวันที่ได้)
+          const dateFilterHtml = `
+            <div class="bg-slate-50 border border-slate-200/80 p-2.5 rounded-xl flex flex-wrap items-center justify-between gap-2.5 text-xs">
+              <div class="flex flex-wrap items-center gap-2">
+                <span class="text-slate-600 font-semibold flex items-center gap-1">
+                  <i data-lucide="calendar" class="w-3.5 h-3.5 text-blue-600"></i>
+                  ช่วงวันที่ค้นหา:
+                </span>
+                <input type="date" id="modal-date-from" value="${modalDateFrom}" class="px-2.5 py-1 bg-white border border-slate-300 rounded-lg text-slate-700 font-mono text-xs focus:ring-1 focus:ring-blue-500 outline-none shadow-2xs">
+                <span class="text-slate-400">ถึง</span>
+                <input type="date" id="modal-date-to" value="${modalDateTo}" class="px-2.5 py-1 bg-white border border-slate-300 rounded-lg text-slate-700 font-mono text-xs focus:ring-1 focus:ring-blue-500 outline-none shadow-2xs">
+                <button onclick="searchModalDateRange()" class="px-3 py-1 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium text-xs flex items-center space-x-1 shadow-xs transition cursor-pointer">
+                  <i data-lucide="search" class="w-3.5 h-3.5"></i>
+                  <span>ค้นหา</span>
+                </button>
+                <button onclick="resetModalDateToVn()" title="รีเซ็ตเป็นวันที่ VN ของ HOSxP (${modalCurrentVstdate})" class="px-2.5 py-1 bg-white border border-slate-300 hover:bg-slate-100 text-slate-700 rounded-lg font-medium text-xs flex items-center space-x-1 transition cursor-pointer shadow-2xs">
+                  <i data-lucide="rotate-ccw" class="w-3.5 h-3.5 text-slate-500"></i>
+                  <span>วันของ VN</span>
+                </button>
+              </div>
+              <div class="text-xs text-slate-500 flex items-center gap-1">
+                <span class="inline-block w-2 h-2 rounded-full bg-emerald-500"></span>
+                เลือกช่วงวันที่ได้ไม่เกิน 14 วัน (ตามเงื่อนไข API สปสช.)
+              </div>
+            </div>
+          `;
+
+          // Render History Container
+          body.innerHTML = `
+            ${bannerHtml}
+            ${dateFilterHtml}
+            <div id="modal-table-container" class="space-y-2 pt-1"></div>
+          `;
+
+          renderModalTable();
+        } else {
+          const dateFilterHtml = `
+            <div class="bg-slate-50 border border-slate-200/80 p-2.5 rounded-xl flex flex-wrap items-center justify-between gap-2.5 text-xs mb-3">
+              <div class="flex flex-wrap items-center gap-2">
+                <span class="text-slate-600 font-semibold flex items-center gap-1">
+                  <i data-lucide="calendar" class="w-3.5 h-3.5 text-blue-600"></i>
+                  ช่วงวันที่ค้นหา:
+                </span>
+                <input type="date" id="modal-date-from" value="${modalDateFrom}" class="px-2.5 py-1 bg-white border border-slate-300 rounded-lg text-slate-700 font-mono text-xs focus:ring-1 focus:ring-blue-500 outline-none shadow-2xs">
+                <span class="text-slate-400">ถึง</span>
+                <input type="date" id="modal-date-to" value="${modalDateTo}" class="px-2.5 py-1 bg-white border border-slate-300 rounded-lg text-slate-700 font-mono text-xs focus:ring-1 focus:ring-blue-500 outline-none shadow-2xs">
+                <button onclick="searchModalDateRange()" class="px-3 py-1 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium text-xs flex items-center space-x-1 shadow-xs transition cursor-pointer">
+                  <i data-lucide="search" class="w-3.5 h-3.5"></i>
+                  <span>ค้นหา</span>
+                </button>
+                <button onclick="resetModalDateToVn()" title="รีเซ็ตเป็นวันที่ VN ของ HOSxP (${modalCurrentVstdate})" class="px-2.5 py-1 bg-white border border-slate-300 hover:bg-slate-100 text-slate-700 rounded-lg font-medium text-xs flex items-center space-x-1 transition cursor-pointer shadow-2xs">
+                  <i data-lucide="rotate-ccw" class="w-3.5 h-3.5 text-slate-500"></i>
+                  <span>วันของ VN</span>
+                </button>
+              </div>
+            </div>
+          `;
+
+          body.innerHTML = `
+            ${dateFilterHtml}
+            <div class="p-3.5 bg-amber-50 border border-amber-300 rounded-xl flex items-center space-x-3 text-amber-900 mb-4">
+              <i data-lucide="alert-circle" class="w-5 h-5 text-amber-600"></i>
+              <div class="text-xs font-medium">ไม่พบประวัติการขอ Authen Code ของเลขบัตร ${modalCurrentCid} ในช่วงวันที่ ${modalDateFrom} ถึง ${modalDateTo} จากระบบ สปสช.</div>
+            </div>
+            <div class="text-center py-12 text-slate-400">
+              <i data-lucide="file-question" class="w-12 h-12 mx-auto mb-2 text-slate-300"></i>
+              <p>ไม่พบประวัติการ Authen ในช่วงวันที่เลือก</p>
+            </div>
+          `;
+        }
+      } catch (err) {
+        body.innerHTML = `
+          <div class="text-center py-8 text-red-500">
+            <i data-lucide="alert-triangle" class="w-8 h-8 mx-auto mb-2"></i>
+            <p>เกิดข้อผิดพลาดในการดึงข้อมูลจาก สปสช.: ${err.message}</p>
+          </div>
+        `;
+      }
+      lucide.createIcons();
+    }
+
+    // Trigger date range search in modal
+    async function searchModalDateRange() {
+      const fromInput = document.getElementById('modal-date-from');
+      const toInput = document.getElementById('modal-date-to');
+      if (fromInput && toInput) {
+        let from = fromInput.value;
+        let to = toInput.value;
+        if (!from && !to) {
+          showToast('กรุณาระบุวันที่ค้นหา', 'info');
+          return;
+        }
+        if (!from) from = to;
+        if (!to) to = from;
+
+        // Ensure from <= to
+        if (new Date(from) > new Date(to)) {
+          const temp = from;
+          from = to;
+          to = temp;
+        }
+
+        // Limit to 14 days per NHSO API constraint
+        const diffMs = Math.abs(new Date(to) - new Date(from));
+        const diffDays = Math.ceil(diffMs / (1000 * 60 * 60 * 24)) + 1;
+        if (diffDays > 14) {
+          showToast('สปสช. กำหนดให้ค้นหาช่วงวันที่ได้ไม่เกิน 14 วัน ระบบปรับช่วงวันให้อัตโนมัติ', 'info');
+          const adjustedFrom = new Date(to);
+          adjustedFrom.setDate(adjustedFrom.getDate() - 13);
+          from = adjustedFrom.toISOString().slice(0, 10);
+        }
+
+        modalDateFrom = from;
+        modalDateTo = to;
+        modalCurrentPage = 1;
+        const body = document.getElementById('modal-body');
+        body.innerHTML = `
+          <div class="text-center py-12 text-slate-400">
+            <i data-lucide="loader-2" class="w-8 h-8 mx-auto animate-spin mb-2 text-blue-600"></i>
+            <p>กำลังค้นหาข้อมูลช่วงวันที่ ${modalDateFrom} ถึง ${modalDateTo}...</p>
+          </div>
+        `;
+        lucide.createIcons();
+        await loadHistoryData();
+      }
+    }
+
+    // Reset date range to VN visit date
+    async function resetModalDateToVn() {
+      modalDateFrom = modalCurrentVstdate;
+      modalDateTo = modalCurrentVstdate;
+      modalCurrentPage = 1;
+      const body = document.getElementById('modal-body');
+      body.innerHTML = `
+        <div class="text-center py-12 text-slate-400">
+          <i data-lucide="loader-2" class="w-8 h-8 mx-auto animate-spin mb-2 text-blue-600"></i>
+          <p>กำลังค้นหาข้อมูลวันที่ ${modalCurrentVstdate}...</p>
+        </div>
+      `;
+      lucide.createIcons();
+      await loadHistoryData();
+    }
+
+    // Render Paginated Modal Table with the 2 new columns
+    function renderModalTable() {
+      const container = document.getElementById('modal-table-container');
+      if (!container || !modalHistoryData.length) return;
+
+      const totalItems = modalHistoryData.length;
+      const totalPages = Math.ceil(totalItems / modalPageSize);
+      if (modalCurrentPage > totalPages) modalCurrentPage = totalPages;
+      if (modalCurrentPage < 1) modalCurrentPage = 1;
+
+      const startIdx = (modalCurrentPage - 1) * modalPageSize;
+      const pageItems = modalHistoryData.slice(startIdx, startIdx + modalPageSize);
+
+      let rowsHtml = '';
+      pageItems.forEach((item, idx) => {
+        const itemIndex = startIdx + idx + 1;
+        const rawClaimDate = item.claimDate || item.receivedDateTime || '';
+        const isToday = String(rawClaimDate).startsWith(modalCurrentVstdate);
+        const claimDateStr = formatThaiDateTime(rawClaimDate);
+        const createDateStr = formatThaiDateTime(item.createDate);
+        const hcode = item.hmain || item.hcode || '-';
+        const hospStr = hcode ? `${hcode} : ${item.hname || '-'}` : (item.hname || '-');
+        const serviceStr = item.claimType ? `${item.claimType} : ${item.claimTypeName || item.claimTypePackage || '-'}` : (item.claimTypeName || item.claimTypePackage || '-');
+        const mainInsclStr = item.mainInsclWithName || item.mainInscl?.codeWithName || (item.mainInscl?.rightId ? `(${item.mainInscl.rightId}) ${item.mainInscl.rightName || ''}` : item.mainInscl?.rightName) || item.mainInsclName || '-';
+        const subInsclStr = item.subInscl?.codeWithName || (item.subInscl?.inscl ? `(${item.subInscl.inscl}) ${item.subInscl.insclName || ''}` : item.subInscl?.insclName) || item.subInsclName || '-';
+        const statusText = (item.status === 'SAVE' || item.claimStatus === 'E') ? 'ยืนยันแล้ว' : (item.status || 'ยืนยันแล้ว');
+
+        rowsHtml += `
+          <tr class="border-b border-slate-200 text-xs hover:bg-slate-50 transition ${isToday ? 'bg-emerald-50/80 font-medium' : ''}">
+            <td class="py-2.5 px-3 text-center text-slate-500 font-mono w-12">
+              ${isToday ? `<span class="inline-block w-2 h-2 rounded-full bg-emerald-500 mr-1" title="รายการของวันนี้"></span>` : ''}${itemIndex}
+            </td>
+            <td class="py-2.5 px-3 text-slate-800 whitespace-nowrap min-w-[90px]">${statusText}</td>
+            <td class="py-2.5 px-3 text-slate-800 whitespace-nowrap min-w-[170px]">${hospStr}</td>
+            <td class="py-2.5 px-3 font-mono text-slate-700 whitespace-nowrap min-w-[160px]">${claimDateStr}</td>
+            <td class="py-2.5 px-3 font-mono text-blue-900 bg-blue-50/40 whitespace-nowrap min-w-[160px] font-medium">${createDateStr}</td>
+            <td class="py-2.5 px-3 font-mono text-slate-700 text-center min-w-[90px]">${item.hnCode || '-'}</td>
+            <td class="py-2.5 px-3 font-mono font-bold text-blue-700 whitespace-nowrap min-w-[140px]">
+              <button type="button" onclick="event.stopPropagation(); copyToClipboard('${item.claimCode}')" title="คลิกเพื่อคัดลอกรหัส" class="inline-flex items-center space-x-1 hover:underline cursor-pointer text-blue-700 font-bold p-0.5 rounded hover:bg-blue-50 transition">
+                <span>${item.claimCode || '-'}</span>
+                <i data-lucide="copy" class="w-3.5 h-3.5 text-slate-400"></i>
+              </button>
+            </td>
+            <td class="py-2.5 px-3 text-center min-w-[150px] whitespace-nowrap bg-purple-50/30">
+              ${renderClaimAuthenBadge(item.claimAuthen)}
+            </td>
+            <td class="py-2.5 px-3 text-slate-800 min-w-[240px] whitespace-normal">${serviceStr}</td>
+            <td class="py-2.5 px-3 text-slate-800 min-w-[220px] whitespace-normal">${mainInsclStr}</td>
+            <td class="py-2.5 px-3 text-slate-800 min-w-[180px] whitespace-normal">${subInsclStr}</td>
+            <td class="py-2.5 px-4 text-center min-w-[160px] whitespace-nowrap">
+              ${renderSourceChannelBadge(item.sourceChannel)}
+            </td>
+          </tr>
+        `;
+      });
+
+      // Pagination Controls
+      let pageButtons = '';
+      for (let p = 1; p <= totalPages; p++) {
+        if (totalPages <= 7 || p === 1 || p === totalPages || (p >= modalCurrentPage - 1 && p <= modalCurrentPage + 1)) {
+          const isActive = p === modalCurrentPage;
+          pageButtons += `
+            <button onclick="changeModalPage(${p})" class="px-2.5 py-1 text-xs rounded border ${isActive ? 'bg-blue-600 text-white border-blue-600 font-bold' : 'bg-white text-slate-700 border-slate-300 hover:bg-slate-100'}">
+              ${p}
+            </button>
+          `;
+        } else if (p === modalCurrentPage - 2 || p === modalCurrentPage + 2) {
+          pageButtons += `<span class="px-1 text-slate-400">...</span>`;
+        }
+      }
+
+      container.innerHTML = `
+        <div class="flex flex-wrap items-center justify-between gap-2 pb-1 pt-1">
+          <div class="flex items-center space-x-2">
+            <h4 class="text-sm font-bold text-blue-600">ประวัติบริการทั้งหมด ${totalItems} ครั้ง</h4>
+            <span class="text-xs text-slate-400">|</span>
+            <span class="text-xs text-slate-600">แสดงผลครั้งละ ${modalPageSize} รายการ</span>
+          </div>
+
+          <!-- Pagination Bar -->
+          <div class="flex items-center space-x-1.5 text-xs">
+            <button onclick="changeModalPage(1)" ${modalCurrentPage === 1 ? 'disabled' : ''} class="px-2 py-1 bg-white border border-slate-300 rounded text-slate-600 hover:bg-slate-100 disabled:opacity-40 disabled:cursor-not-allowed" title="หน้าแรก">&lt;&lt;</button>
+            <button onclick="changeModalPage(${modalCurrentPage - 1})" ${modalCurrentPage === 1 ? 'disabled' : ''} class="px-2 py-1 bg-white border border-slate-300 rounded text-slate-600 hover:bg-slate-100 disabled:opacity-40 disabled:cursor-not-allowed" title="ก่อนหน้า">&lt;</button>
+            ${pageButtons}
+            <button onclick="changeModalPage(${modalCurrentPage + 1})" ${modalCurrentPage === totalPages ? 'disabled' : ''} class="px-2 py-1 bg-white border border-slate-300 rounded text-slate-600 hover:bg-slate-100 disabled:opacity-40 disabled:cursor-not-allowed" title="ถัดไป">&gt;</button>
+            <button onclick="changeModalPage(${totalPages})" ${modalCurrentPage === totalPages ? 'disabled' : ''} class="px-2 py-1 bg-white border border-slate-300 rounded text-slate-600 hover:bg-slate-100 disabled:opacity-40 disabled:cursor-not-allowed" title="หน้าสุดท้าย">&gt;&gt;</button>
+
+            <!-- Page Size Selector -->
+            <select onchange="changeModalPageSize(this.value)" class="ml-2 px-2 py-1 bg-white border border-slate-300 rounded text-slate-700 text-xs outline-none">
+              <option value="25" ${modalPageSize === 25 ? 'selected' : ''}>25 / หน้า</option>
+              <option value="50" ${modalPageSize === 50 ? 'selected' : ''}>50 / หน้า</option>
+              <option value="100" ${modalPageSize === 100 ? 'selected' : ''}>100 / หน้า</option>
+              <option value="500" ${modalPageSize === 500 ? 'selected' : ''}>ทั้งหมด</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="border border-slate-200 rounded-xl overflow-auto max-h-[58vh] custom-scroll shadow-sm">
+          <table class="min-w-[1950px] w-full text-left border-collapse text-xs">
+            <thead class="sticky top-0 z-10 shadow-2xs">
+              <tr class="bg-slate-100 border-b border-slate-300 text-slate-700 font-semibold whitespace-nowrap">
+                <th class="py-2.5 px-3 text-center w-12">ลำดับ</th>
+                <th class="py-2.5 px-3 min-w-[90px]">สถานะ</th>
+                <th class="py-2.5 px-3 min-w-[170px]">หน่วยบริการ</th>
+                <th class="py-2.5 px-3 min-w-[160px]">วันเวลาที่เข้ารับบริการ</th>
+                <th class="py-2.5 px-3 min-w-[150px] bg-blue-50 text-blue-900 border-x border-blue-200">วันที่บันทึก</th>
+                <th class="py-2.5 px-3 text-center min-w-[90px]">HN CODE</th>
+                <th class="py-2.5 px-3 min-w-[140px]">CLAIM CODE</th>
+                <th class="py-2.5 px-3 text-center min-w-[140px] bg-purple-50 text-purple-900 border-x border-purple-200">วิธีการพิสูจน์ตัวตน</th>
+                <th class="py-2.5 px-3 min-w-[240px]">บริการ</th>
+                <th class="py-2.5 px-3 min-w-[220px]">สิทธิหลัก</th>
+                <th class="py-2.5 px-3 min-w-[180px]">สิทธิย่อย</th>
+                <th class="py-2.5 px-4 text-center min-w-[160px]">ช่องทางการขอ Authen</th>
+              </tr>
+            </thead>
+            <tbody class="divide-y divide-slate-100 text-slate-700 bg-white">
+              ${rowsHtml}
+            </tbody>
+          </table>
+        </div>
+      `;
+      lucide.createIcons();
+    }
+
+    function changeModalPage(page) {
+      modalCurrentPage = page;
+      renderModalTable();
+    }
+
+    function changeModalPageSize(size) {
+      modalPageSize = parseInt(size, 10);
+      modalCurrentPage = 1;
+      renderModalTable();
+    }
+
+    function closeHistoryModal() {
+      document.getElementById('history-modal').classList.add('hidden');
+    }
+
+    // State for right details modal
+    let rightModalCurrentVn = null;
+    let currentRawRightJson = null;
+    let currentRawAuthenJson = null;
+
+    // View Right DB Detail modal
+    async function viewRightDbDetail(vn) {
+      if (!vn) return;
+      rightModalCurrentVn = vn;
+      const visit = rawVisits.find(v => v.vn === vn) || {};
+      const modal = document.getElementById('right-detail-modal');
+      const title = document.getElementById('right-modal-title');
+      const subtitle = document.getElementById('right-modal-subtitle');
+      const badge = document.getElementById('right-modal-badge');
+      const body = document.getElementById('right-modal-body');
+      const btnRecheck = document.getElementById('right-modal-btn-recheck');
+
+      title.textContent = `รายละเอียดสิทธิ์การรักษา: ${visit.ptname || 'ผู้รับบริการ'}`;
+      subtitle.textContent = `VN: ${vn} | HN: ${visit.hn || '-'} | CID: ${visit.cid || '-'}`;
+      badge.textContent = visit.dflow_saved ? 'บันทึกลง DB แล้ว' : 'ยังไม่บันทึกใน DB';
+      badge.className = visit.dflow_saved
+        ? 'px-2 py-0.5 rounded text-[11px] font-semibold bg-emerald-100 text-emerald-800 border border-emerald-300'
+        : 'px-2 py-0.5 rounded text-[11px] font-semibold bg-amber-100 text-amber-800 border border-amber-300';
+
+      body.innerHTML = `
+        <div class="text-center py-12 text-slate-400">
+          <i data-lucide="loader-2" class="w-8 h-8 mx-auto animate-spin mb-2 text-blue-600"></i>
+          <p>กำลังดึงข้อมูลรายละเอียดสิทธิ์จากฐานข้อมูล (d-flow)...</p>
+        </div>
+      `;
+      modal.classList.remove('hidden');
+      lucide.createIcons();
+
+      // Setup recheck button
+      if (btnRecheck) {
+        btnRecheck.onclick = async () => {
+          btnRecheck.disabled = true;
+          btnRecheck.classList.add('opacity-50');
+          showToast(`กำลังตรวจสอบสิทธิ์ VN ${vn} ใหม่จาก สปสช....`, 'info');
+          try {
+            await checkAndSaveSingle(vn, visit.cid);
+            await viewRightDbDetail(vn);
+          } finally {
+            btnRecheck.disabled = false;
+            btnRecheck.classList.remove('opacity-50');
+          }
+        };
+      }
+
+      try {
+        const res = await fetch(`/api/vn-authen/${vn}`).then(r => r.json());
+        if (res.success && res.data) {
+          const d = res.data;
+          // Synchronize visit state
+          if (visit) {
+            visit.dflow_saved = true;
+            visit.dflow_data = d;
+            if (d.claim_code) visit.auth_code_from_api = d.claim_code;
+            updateSingleRowDOM(visit);
+          }
+          badge.textContent = 'บันทึกลง DB แล้ว';
+          badge.className = 'px-2.5 py-0.5 rounded text-xs font-semibold bg-emerald-100 text-emerald-800 border border-emerald-300';
+
+          renderRightDetailBody(d, visit);
+        } else {
+          // Not found in DB yet
+          body.innerHTML = `
+            <div class="p-10 text-center space-y-5 max-w-lg mx-auto">
+              <div class="w-18 h-18 mx-auto rounded-2xl bg-amber-50 text-amber-600 border border-amber-200 flex items-center justify-center shadow-xs">
+                <i data-lucide="database" class="w-9 h-9"></i>
+              </div>
+              <div class="space-y-1.5">
+                <h4 class="text-lg font-bold text-slate-800">ยังไม่มีข้อมูลสิทธิ์ในฐานข้อมูล (d-flow)</h4>
+                <p class="text-sm text-slate-500 leading-relaxed">
+                  VN <span class="font-mono font-bold text-slate-800">${vn}</span> ยังไม่ถูกตรวจสอบและบันทึกลงตาราง <span class="font-mono text-blue-600 font-semibold">vn_nhso_authen</span>
+                </p>
+              </div>
+              <button onclick="checkAndSaveFromModal('${vn}', '${visit.cid || ''}')" class="px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-sm font-bold shadow-md hover:shadow-lg transition inline-flex items-center space-x-2 cursor-pointer">
+                <i data-lucide="refresh-cw" class="w-4.5 h-4.5"></i>
+                <span>ตรวจสอบสิทธิ์จาก สปสช. และบันทึกลง DB เดี๋ยวนี้</span>
+              </button>
+            </div>
+          `;
+          lucide.createIcons();
+        }
+      } catch (err) {
+        body.innerHTML = `
+          <div class="text-center py-12 text-red-500 space-y-2">
+            <i data-lucide="alert-triangle" class="w-10 h-10 mx-auto text-red-500"></i>
+            <p class="font-semibold text-sm">ไม่สามารถโหลดข้อมูลสิทธิ์จาก DB ได้</p>
+            <p class="text-xs text-slate-500">${err.message}</p>
+          </div>
+        `;
+        lucide.createIcons();
+      }
+    }
+
+    async function checkAndSaveFromModal(vn, cid) {
+      const modalBody = document.getElementById('right-modal-body');
+      modalBody.innerHTML = `
+        <div class="text-center py-12 text-slate-400">
+          <i data-lucide="loader-2" class="w-8 h-8 mx-auto animate-spin mb-2 text-blue-600"></i>
+          <p>กำลังตรวจสอบสิทธิ์จาก สปสช. และบันทึกลงฐานข้อมูล...</p>
+        </div>
+      `;
+      lucide.createIcons();
+
+      try {
+        await checkAndSaveSingle(vn, cid);
+        await viewRightDbDetail(vn);
+      } catch (err) {
+        modalBody.innerHTML = `
+          <div class="text-center py-12 text-red-500 space-y-2">
+            <i data-lucide="alert-triangle" class="w-8 h-8 mx-auto text-red-500"></i>
+            <p class="font-semibold text-sm">เกิดข้อผิดพลาดในการตรวจสอบสิทธิ์</p>
+            <p class="text-xs text-slate-500">${err.message}</p>
+          </div>
+        `;
+        lucide.createIcons();
+      }
+    }
+
+    function renderRightDetailBody(d, visit) {
+      const body = document.getElementById('right-modal-body');
+      if (!body) return;
+
+      currentRawRightJson = d.right_json;
+      currentRawAuthenJson = d.authen_json;
+
+      const isHospMatch = visit.hospmain && d.hospmain_code && visit.hospmain.trim() === d.hospmain_code.trim();
+      const hosAuth = (visit.auth_code || '').trim();
+      const apiAuth = (d.claim_code || '').trim();
+      const isAuthMismatch = Boolean(hosAuth && apiAuth && hosAuth.toLowerCase() !== apiAuth.toLowerCase());
+      const isAuthMatch = Boolean(hosAuth && apiAuth && hosAuth.toLowerCase() === apiAuth.toLowerCase());
+
+      const ptFullName = `${d.title_name || ''}${d.fname || ''} ${d.lname || ''}`.trim() || visit.ptname || '-';
+
+      body.innerHTML = `
+        <!-- Patient Banner -->
+        <div class="bg-gradient-to-r from-slate-50 via-blue-50/30 to-indigo-50/20 border border-slate-200 rounded-2xl p-5 flex flex-wrap items-center justify-between gap-4 shadow-xs">
+          <div class="flex items-center space-x-4">
+            <div class="w-13 h-13 rounded-2xl bg-gradient-to-tr from-blue-600 to-indigo-600 text-white font-bold flex items-center justify-center text-lg shadow-sm">
+              ${(d.fname || 'U').slice(0, 1)}
+            </div>
+            <div>
+              <div class="font-bold text-slate-800 text-lg leading-tight">${ptFullName}</div>
+              <div class="text-sm text-slate-500 flex flex-wrap items-center gap-2.5 mt-1">
+                <span>HN: <b class="font-mono text-slate-800 font-semibold">${d.hn_code || visit.hn || '-'}</b></span>
+                <span class="text-slate-300">•</span>
+                <span>VN: <b class="font-mono text-slate-800 font-semibold">${d.vn}</b></span>
+                <span class="text-slate-300">•</span>
+                <span>อายุ: <b class="text-slate-800 font-semibold">${d.authen_age || '-'}</b></span>
+                <span class="text-slate-300">•</span>
+                <span>เพศ: <b class="text-slate-800 font-semibold">${d.sex || '-'}</b></span>
+                <span class="text-slate-300">•</span>
+                <span>สัญชาติ: <b class="text-slate-800 font-semibold">${d.nation || '-'}</b></span>
+              </div>
+            </div>
+          </div>
+          <div class="flex items-center space-x-2">
+            <div class="bg-white border border-slate-200 px-4 py-2 rounded-xl flex items-center space-x-2.5 shadow-xs">
+              <span class="text-sm text-slate-500">เลขบัตรประชาชน (CID):</span>
+              <span class="font-mono font-bold text-slate-800 text-sm tracking-wide">${d.pid || visit.cid || '-'}</span>
+              ${d.pid ? `<button type="button" onclick="event.stopPropagation(); copyToClipboard('${d.pid}')" title="คัดลอก CID" class="text-slate-400 hover:text-slate-700 p-1 rounded-md hover:bg-slate-100 transition"><i data-lucide="copy" class="w-4 h-4"></i></button>` : ''}
+            </div>
+          </div>
+        </div>
+
+        <!-- Comparison Table: HOSxP vs สปสช. (DB) -->
+        <div class="border border-slate-200 rounded-2xl overflow-hidden shadow-xs">
+          <div class="bg-slate-100/90 px-5 py-3 border-b border-slate-200 flex items-center justify-between">
+            <h4 class="text-sm font-bold text-slate-800 flex items-center space-x-2">
+              <i data-lucide="git-compare" class="w-4.5 h-4.5 text-blue-600"></i>
+              <span>เปรียบเทียบข้อมูลสิทธิและการ Authen (HOSxP vs สปสช. ใน DB)</span>
+            </h4>
+            <span class="text-xs text-slate-500">ตรวจสอบความสอดคล้องของข้อมูลระหว่างสองระบบ</span>
+          </div>
+          <div class="overflow-x-auto">
+            <table class="w-full text-sm text-left border-collapse">
+              <thead>
+                <tr class="bg-slate-50 text-slate-700 border-b border-slate-200 font-semibold text-xs uppercase tracking-wider">
+                  <th class="py-3 px-4 w-1/4">รายการ</th>
+                  <th class="py-3 px-4 w-5/12">ข้อมูลใน HOSxP</th>
+                  <th class="py-3 px-4 w-5/12">ข้อมูล สปสช. ที่บันทึกใน DB</th>
+                  <th class="py-3 px-4 text-center w-36">ผลการเทียบ</th>
+                </tr>
+              </thead>
+              <tbody class="divide-y divide-slate-100 bg-white">
+                <tr class="hover:bg-slate-50/60 transition">
+                  <td class="py-3.5 px-4 font-semibold text-slate-700">สิทธิการรักษา</td>
+                  <td class="py-3.5 px-4 text-slate-800">
+                    <div class="font-medium text-slate-900">${visit.pttypename || '-'}</div>
+                    <div class="text-xs text-slate-400 mt-0.5">รหัสสิทธิ: ${visit.pttype || '-'} ${visit.pttypeno ? `(เลขที่ ${visit.pttypeno})` : ''}</div>
+                  </td>
+                  <td class="py-3.5 px-4 text-blue-700 font-medium">
+                    <div class="font-bold text-blue-900">${d.maininscl_name || '-'}</div>
+                    <div class="text-xs text-slate-500 mt-0.5">${d.subinscl_name ? `(${d.subinscl_name})` : ''} รหัส: ${d.maininscl_id || '-'}</div>
+                  </td>
+                  <td class="py-3.5 px-4 text-center text-slate-400">-</td>
+                </tr>
+                <tr class="hover:bg-slate-50/60 transition">
+                  <td class="py-3.5 px-4 font-semibold text-slate-700">รพ.หลัก (Hosp Main)</td>
+                  <td class="py-3.5 px-4 font-mono font-medium text-slate-800">${visit.hospmain || '-'}</td>
+                  <td class="py-3.5 px-4 text-slate-800">
+                    <span class="font-semibold text-slate-900">${d.hospmain_name || '-'}</span>
+                    ${d.hospmain_code ? `<span class="font-mono text-slate-500 font-medium">(${d.hospmain_code})</span>` : ''}
+                  </td>
+                  <td class="py-3.5 px-4 text-center">
+                    ${isHospMatch ? `<span class="px-2.5 py-1 bg-emerald-100 text-emerald-800 border border-emerald-300 rounded-lg font-semibold text-xs inline-flex items-center"><i data-lucide="check" class="w-3.5 h-3.5 mr-1"></i>ตรงกัน</span>` : (visit.hospmain && d.hospmain_code ? `<span class="px-2.5 py-1 bg-amber-100 text-amber-800 border border-amber-300 rounded-lg text-xs font-medium">ต่างกัน</span>` : '<span class="text-slate-400">-</span>')}
+                  </td>
+                </tr>
+                <tr class="hover:bg-slate-50/60 transition">
+                  <td class="py-3.5 px-4 font-semibold text-slate-700">รพ.รอง (Hosp Sub)</td>
+                  <td class="py-3.5 px-4 font-mono font-medium text-slate-800">${visit.hospsub || '-'}</td>
+                  <td class="py-3.5 px-4 text-slate-800">
+                    <span class="font-semibold text-slate-900">${d.hospsub_name || '-'}</span>
+                    ${d.hospsub_code ? `<span class="font-mono text-slate-500 font-medium">(${d.hospsub_code})</span>` : ''}
+                  </td>
+                  <td class="py-3.5 px-4 text-center text-slate-400">-</td>
+                </tr>
+                <tr class="${isAuthMismatch ? 'bg-rose-50/70' : 'hover:bg-slate-50/60'} transition">
+                  <td class="py-3.5 px-4 font-semibold text-slate-700">Authen Code</td>
+                  <td class="py-3.5 px-4 font-mono font-bold text-base ${hosAuth ? 'text-blue-700' : 'text-slate-400 font-normal'}">
+                    ${hosAuth || 'ไม่มีใน HOSxP'}
+                  </td>
+                  <td class="py-3.5 px-4 font-mono font-bold text-base ${apiAuth ? 'text-emerald-700' : 'text-slate-400 font-normal'}">
+                    ${apiAuth || 'ไม่มีใน สปสช.'}
+                  </td>
+                  <td class="py-3.5 px-4 text-center">
+                    ${isAuthMismatch
+                      ? `<span class="px-2.5 py-1 bg-rose-100 text-rose-800 border border-rose-300 rounded-lg font-bold text-xs inline-flex items-center shadow-2xs"><i data-lucide="alert-circle" class="w-3.5 h-3.5 mr-1"></i>ไม่ตรงกับ Hosxp</span>`
+                      : (isAuthMatch
+                        ? `<span class="px-2.5 py-1 bg-emerald-100 text-emerald-800 border border-emerald-300 rounded-lg font-semibold text-xs inline-flex items-center"><i data-lucide="check" class="w-3.5 h-3.5 mr-1"></i>ตรงกัน</span>`
+                        : (apiAuth ? `<span class="px-2.5 py-1 bg-blue-100 text-blue-800 border border-blue-300 rounded-lg text-xs font-medium">มีใน สปสช.</span>` : '<span class="text-slate-400">-</span>')
+                      )}
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- Section 1: รายละเอียดสิทธิการรักษาจาก สปสช. -->
+        <div class="border border-slate-200 rounded-2xl p-5 bg-white shadow-xs space-y-4">
+          <div class="flex items-center justify-between border-b border-slate-100 pb-3">
+            <h4 class="text-sm font-bold text-slate-800 uppercase tracking-wider flex items-center space-x-2">
+              <i data-lucide="id-card" class="w-5 h-5 text-blue-600"></i>
+              <span>ข้อมูลสิทธิ์การรักษา สปสช. (บันทึกในตาราง vn_nhso_authen)</span>
+            </h4>
+            <span class="text-xs text-slate-500">ตรวจเมื่อ: <b class="font-mono text-slate-800 text-xs">${formatThaiDateTime(d.right_check_date)}</b></span>
+          </div>
+
+          <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3.5 text-sm">
+            <div class="p-3.5 rounded-xl bg-slate-50 border border-slate-200/70">
+              <span class="text-slate-500 block text-xs font-medium">สิทธิหลัก (Main Insurance)</span>
+              <span class="font-bold text-blue-900 text-base block mt-1 leading-snug">${d.maininscl_name || '-'}</span>
+              <span class="text-slate-500 font-mono text-xs mt-0.5 block">รหัส: ${d.maininscl_id || '-'}</span>
+            </div>
+
+            <div class="p-3.5 rounded-xl bg-slate-50 border border-slate-200/70">
+              <span class="text-slate-500 block text-xs font-medium">สิทธิย่อย (Sub Insurance)</span>
+              <span class="font-semibold text-slate-800 text-sm block mt-1 leading-snug">${d.subinscl_name || '-'}</span>
+              <span class="text-slate-500 font-mono text-xs mt-0.5 block">รหัส: ${d.subinscl_id || '-'}</span>
+            </div>
+
+            <div class="p-3.5 rounded-xl bg-slate-50 border border-slate-200/70">
+              <span class="text-slate-500 block text-xs font-medium">สถานพยาบาลหลัก (Hosp Main)</span>
+              <span class="font-semibold text-slate-800 text-sm block mt-1 leading-snug">${d.hospmain_name || '-'}</span>
+              <span class="text-slate-500 font-mono text-xs mt-0.5 block">รหัส: ${d.hospmain_code || '-'}</span>
+            </div>
+
+            <div class="p-3.5 rounded-xl bg-slate-50 border border-slate-200/70">
+              <span class="text-slate-500 block text-xs font-medium">สถานพยาบาลรอง (Hosp Sub)</span>
+              <span class="font-semibold text-slate-800 text-sm block mt-1 leading-snug">${d.hospsub_name || '-'}</span>
+              <span class="text-slate-500 font-mono text-xs mt-0.5 block">รหัส: ${d.hospsub_code || '-'}</span>
+            </div>
+
+            <div class="p-3.5 rounded-xl bg-slate-50 border border-slate-200/70">
+              <span class="text-slate-500 block text-xs font-medium">รพ.บริการปฐมภูมิ (Hosp Main OP)</span>
+              <span class="font-semibold text-slate-800 text-sm block mt-1 leading-snug">${d.hospmain_op_name || '-'}</span>
+              <span class="text-slate-500 font-mono text-xs mt-0.5 block">รหัส: ${d.hospmain_op_code || '-'}</span>
+            </div>
+
+            <div class="p-3.5 rounded-xl bg-slate-50 border border-slate-200/70">
+              <span class="text-slate-500 block text-xs font-medium">จังหวัดลงทะเบียนสิทธิ (Purchase Province)</span>
+              <span class="font-semibold text-slate-800 text-sm block mt-1 leading-snug">${d.purchase_province || '-'}</span>
+            </div>
+
+            <div class="p-3.5 rounded-xl bg-slate-50 border border-slate-200/70">
+              <span class="text-slate-500 block text-xs font-medium">วันที่เริ่มใช้สิทธิ (Right Start Date)</span>
+              <span class="font-semibold text-slate-800 text-sm block mt-1 leading-snug">${formatThaiDateTime(d.right_start_date)}</span>
+            </div>
+
+            <div class="p-3.5 rounded-xl bg-slate-50 border border-slate-200/70">
+              <span class="text-slate-500 block text-xs font-medium">เลขที่บัตร (Card ID)</span>
+              <span class="font-mono font-semibold text-slate-800 text-sm block mt-1 leading-snug">${d.card_id || '-'}</span>
+            </div>
+
+            <div class="p-3.5 rounded-xl bg-slate-50 border border-slate-200/70">
+              <span class="text-slate-500 block text-xs font-medium">Paid Model</span>
+              <span class="font-mono text-slate-700 text-sm block mt-1 leading-snug">${d.paid_model || '-'}</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Section 2: ข้อมูล Authen Code ล่าสุดใน DB -->
+        <div class="border border-slate-200 rounded-2xl p-5 bg-white shadow-xs space-y-4">
+          <div class="flex items-center justify-between border-b border-slate-100 pb-3">
+            <h4 class="text-sm font-bold text-slate-800 uppercase tracking-wider flex items-center space-x-2">
+              <i data-lucide="key" class="w-5 h-5 text-emerald-600"></i>
+              <span>ข้อมูลการ Authen จาก สปสช. (บันทึกล่าสุดใน DB)</span>
+            </h4>
+            <span class="text-sm font-bold text-emerald-800 bg-emerald-100 px-3 py-1 rounded-full border border-emerald-300">
+              สถานะ: ${d.authen_status || d.claim_status || 'ยืนยันแล้ว'}
+            </span>
+          </div>
+
+          <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3.5 text-sm">
+            <!-- Authen Code Highlight -->
+            <div class="p-4 rounded-2xl bg-gradient-to-br from-emerald-50 via-teal-50 to-emerald-100/50 border-2 border-emerald-300 md:col-span-2 lg:col-span-1 shadow-xs">
+              <span class="text-emerald-800 block text-xs font-bold uppercase tracking-wider">Claim Code (Authen Code)</span>
+              <div class="flex items-center space-x-3 mt-1.5">
+                <span class="font-mono text-2xl font-black text-emerald-950 tracking-wider">${d.claim_code || 'ยังไม่มี Authen'}</span>
+                ${d.claim_code ? `<button type="button" onclick="event.stopPropagation(); copyToClipboard('${d.claim_code}')" title="คัดลอก Claim Code" class="p-1.5 text-emerald-700 hover:text-emerald-950 hover:bg-emerald-200/80 rounded-lg transition"><i data-lucide="copy" class="w-5 h-5"></i></button>` : ''}
+              </div>
+            </div>
+
+            <div class="p-3.5 rounded-xl bg-slate-50 border border-slate-200/70">
+              <span class="text-slate-500 block text-xs font-medium">บริการ / ประเภทการเคลม</span>
+              <span class="font-semibold text-slate-800 text-sm block mt-1 leading-snug">${d.claim_type_name || d.claim_type || '-'}</span>
+            </div>
+
+            <div class="p-3.5 rounded-xl bg-slate-50 border border-slate-200/70">
+              <span class="text-slate-500 block text-xs font-medium">วันเวลาที่เข้ารับบริการ (claimDate)</span>
+              <span class="font-mono font-semibold text-slate-800 text-sm block mt-1 leading-snug">${formatThaiDateTime(d.received_datetime)}</span>
+            </div>
+
+            <div class="p-3.5 rounded-xl bg-blue-50/50 border border-blue-200/70">
+              <span class="text-blue-900 block text-xs font-medium">วันที่บันทึก</span>
+              <span class="font-mono font-bold text-blue-950 text-sm block mt-1 leading-snug">${formatThaiDateTime(d.create_date)}</span>
+            </div>
+
+            <div class="p-3.5 rounded-xl bg-purple-50/50 border border-purple-200/70">
+              <span class="text-purple-900 block text-xs font-medium">วิธีการพิสูจน์ตัวตน</span>
+              <div class="mt-1">${renderClaimAuthenBadge(d.claim_authen)}</div>
+            </div>
+
+            <div class="p-3.5 rounded-xl bg-slate-50 border border-slate-200/70">
+              <span class="text-slate-500 block text-xs font-medium">ช่องทางการขอ Authen (Source)</span>
+              <div class="mt-1">${renderSourceChannelBadge(d.source_channel)}</div>
+            </div>
+
+            <div class="p-3.5 rounded-xl bg-slate-50 border border-slate-200/70">
+              <span class="text-slate-500 block text-xs font-medium">รหัสธุรกรรม สปสช. (transId)</span>
+              <span class="font-mono font-bold text-slate-800 text-sm block mt-1 leading-snug">${d.trans_id || '-'}</span>
+            </div>
+
+            <div class="p-3.5 rounded-xl bg-slate-50 border border-slate-200/70">
+              <span class="text-slate-500 block text-xs font-medium">เบอร์โทรศัพท์ (tel)</span>
+              <span class="font-mono font-semibold text-slate-800 text-sm block mt-1 leading-snug">${d.tel || '-'}</span>
+            </div>
+
+            <div class="p-3.5 rounded-xl bg-slate-50 border border-slate-200/70">
+              <span class="text-slate-500 block text-xs font-medium">หน่วยบริการที่ทำรายการ Authen</span>
+              <span class="font-semibold text-slate-800 text-sm block mt-1 leading-snug">${d.authen_hname || '-'}</span>
+              <span class="text-slate-500 font-mono text-xs mt-0.5 block">รหัส: ${d.authen_hcode || '-'}</span>
+            </div>
+
+            <div class="p-3.5 rounded-xl bg-slate-50 border border-slate-200/70">
+              <span class="text-slate-500 block text-xs font-medium">บันทึก/อัปเดตในระบบ DB เมื่อ</span>
+              <span class="font-mono text-slate-700 text-sm block mt-1 leading-snug">${formatThaiDateTime(d.updated_at || d.created_at)}</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Section 3: ข้อมูล Raw Data (JSON) -->
+        <div class="border border-slate-200 rounded-2xl overflow-hidden shadow-xs">
+          <details class="group bg-slate-50">
+            <summary class="px-5 py-3.5 cursor-pointer text-sm font-bold text-slate-700 hover:text-blue-600 flex items-center justify-between select-none">
+              <div class="flex items-center space-x-2.5">
+                <i data-lucide="code" class="w-4.5 h-4.5 text-slate-500 group-hover:text-blue-600"></i>
+                <span>ดูข้อมูลดิบ (Raw JSON Data จาก สปสช. ที่บันทึกใน DB)</span>
+              </div>
+              <span class="text-xs text-slate-400 group-open:rotate-180 transition-transform">▼</span>
+            </summary>
+            <div class="p-5 bg-white border-t border-slate-200 space-y-4">
+              <div>
+                <div class="flex items-center justify-between mb-1.5">
+                  <span class="text-sm font-semibold text-slate-700 font-mono">right_json (ข้อมูลสิทธิ์ดิบ):</span>
+                  ${d.right_json ? `<button type="button" onclick="copyToClipboard(currentRawRightJson)" class="text-xs font-semibold text-blue-600 hover:text-blue-800 bg-blue-50 px-2.5 py-1 rounded-md border border-blue-200">คัดลอก JSON</button>` : ''}
+                </div>
+                <pre class="bg-slate-900 text-slate-100 text-xs font-mono p-4 rounded-xl overflow-x-auto max-h-64 custom-scroll leading-relaxed">${formatJsonCode(d.right_json)}</pre>
+              </div>
+
+              <div>
+                <div class="flex items-center justify-between mb-1.5">
+                  <span class="text-sm font-semibold text-slate-700 font-mono">authen_json (ข้อมูล Authen ดิบ):</span>
+                  ${d.authen_json ? `<button type="button" onclick="copyToClipboard(currentRawAuthenJson)" class="text-xs font-semibold text-blue-600 hover:text-blue-800 bg-blue-50 px-2.5 py-1 rounded-md border border-blue-200">คัดลอก JSON</button>` : ''}
+                </div>
+                <pre class="bg-slate-900 text-slate-100 text-xs font-mono p-4 rounded-xl overflow-x-auto max-h-64 custom-scroll leading-relaxed">${formatJsonCode(d.authen_json)}</pre>
+              </div>
+            </div>
+          </details>
+        </div>
+      `;
+
+      lucide.createIcons();
+    }
+
+    function closeRightDetailModal() {
+      document.getElementById('right-detail-modal')?.classList.add('hidden');
+    }
+
+    function formatJsonCode(raw) {
+      if (!raw) return '<span class="text-slate-400">ไม่มีข้อมูล</span>';
+      try {
+        const obj = typeof raw === 'string' ? JSON.parse(raw) : raw;
+        return escapeHtml(JSON.stringify(obj, null, 2));
+      } catch {
+        return escapeHtml(String(raw));
+      }
+    }
+
+    function escapeHtml(str) {
+      return String(str)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#039;');
+    }
+
+    // Refresh token manual
+    async function refreshTokenManual() {
+      showToast('กำลังขอ Access Token ใหม่จาก สปสช....', 'info');
+      try {
+        const res = await fetch('/api/token/refresh', { method: 'POST' }).then(r => r.json());
+        if (res.success) {
+          showToast('รีเฟรช Token สำเร็จแล้ว', 'success');
+          checkSystemHealth();
+        } else {
+          showToast(`รีเฟรชไม่สำเร็จ: ${res.message}`, 'error');
+        }
+      } catch (err) {
+        showToast(`เกิดข้อผิดพลาด: ${err.message}`, 'error');
+      }
+    }
+
+    // Robust copy to clipboard helper (works on HTTP Intranet / LAN and HTTPS)
+    async function copyToClipboard(text) {
+      if (!text && text !== 0) return;
+      const str = typeof text === 'object' ? JSON.stringify(text, null, 2) : String(text).trim();
+      let success = false;
+
+      // 1. Try modern navigator.clipboard (available on HTTPS or localhost)
+      if (navigator.clipboard && window.isSecureContext) {
+        try {
+          await navigator.clipboard.writeText(str);
+          success = true;
+        } catch (err) {
+          console.warn('navigator.clipboard failed, attempting fallback...', err);
+        }
+      }
+
+      // 2. Fallback to execCommand (works reliably on HTTP across hospital intranet)
+      if (!success) {
+        try {
+          const textArea = document.createElement('textarea');
+          textArea.value = str;
+          textArea.style.position = 'fixed';
+          textArea.style.top = '-9999px';
+          textArea.style.left = '-9999px';
+          textArea.style.opacity = '0';
+          textArea.setAttribute('readonly', '');
+          document.body.appendChild(textArea);
+          textArea.focus();
+          textArea.select();
+          textArea.setSelectionRange(0, 99999);
+          success = document.execCommand('copy');
+          document.body.removeChild(textArea);
+        } catch (err) {
+          console.error('execCommand copy failed:', err);
+        }
+      }
+
+      if (success) {
+        showToast(`คัดลอกข้อมูลเรียบร้อยแล้ว`, 'success');
+      } else {
+        // 3. Fallback prompt if completely blocked
+        window.prompt('กรุณากด Ctrl+C เพื่อคัดลอก:', str);
+      }
+    }
+
+    // Close modal on ESC key or background click
+    window.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape') {
+        closeHistoryModal();
+        closeRightDetailModal();
+      }
+    });
+    document.getElementById('history-modal')?.addEventListener('click', (e) => {
+      if (e.target.id === 'history-modal') closeHistoryModal();
+    });
+    document.getElementById('right-detail-modal')?.addEventListener('click', (e) => {
+      if (e.target.id === 'right-detail-modal') closeRightDetailModal();
+    });
+
+    // Simple toast notification
+    function showToast(message, type = 'info') {
+      const container = document.getElementById('toast-container');
+      const toast = document.createElement('div');
+      const colors = {
+        success: 'bg-emerald-600 text-white',
+        error: 'bg-red-600 text-white',
+        info: 'bg-slate-800 text-white'
+      };
+
+      toast.className = `px-4 py-2.5 rounded-lg shadow-lg text-xs font-medium flex items-center space-x-2 transition-all transform duration-300 translate-y-2 opacity-0 ${colors[type] || colors.info}`;
+      toast.textContent = message;
+
+      container.appendChild(toast);
+      setTimeout(() => {
+        toast.classList.remove('translate-y-2', 'opacity-0');
+      }, 10);
+
+      setTimeout(() => {
+        toast.classList.add('opacity-0', 'translate-y-2');
+        setTimeout(() => toast.remove(), 300);
+      }, 3500);
+    }
+  </script>
+</body>
+</html>
