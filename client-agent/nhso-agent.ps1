@@ -5,8 +5,8 @@
 
 # ----------------- [ SERVER CONNECTION SETTINGS ] -----------------
 # Set to your server URL (e.g. http://10.10.10.50:4100/api/token/report or http://localhost:4100/api/token/report)
-$SERVER_URL   = "http://localhost:4100/api/token/report"
-$AGENT_SECRET = "nhso-agent-secret-10677-rbr"
+$SERVER_URL   = "http://nhso-authen.local/api/token/report"
+$AGENT_SECRET = "nhso-agent-secret-10677-rbh"
 # ------------------------------------------------------------------
 
 $TOKEN_DIR    = "$env:USERPROFILE\SRM Smart Card Single Sign-On"
@@ -81,6 +81,7 @@ function Send-TokenToServer {
 
         $payload = @{
             client_hostname = $env:COMPUTERNAME
+            agent_secret    = $script:AGENT_SECRET
             access_token    = $accessToken
             refresh_token   = $refreshToken
         } | ConvertTo-Json -Compress
