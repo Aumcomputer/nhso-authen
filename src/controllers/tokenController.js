@@ -140,19 +140,22 @@ class TokenController {
     }
 
     // 2. Security Check: Client Subnet Restriction
+    const rawForwarded = req.headers['x-forwarded-for'];
     const clientIp = (
-      req.headers['x-forwarded-for'] ||
-      req.socket.remoteAddress ||
+      (rawForwarded ? String(rawForwarded).split(',')[0].trim() : null) ||
+      req.socket?.remoteAddress ||
+      req.ip ||
       ''
     ).replace('::ffff:', '');
 
-    if (config.allowedSubnets) {
+    if (config.allowedSubnets && config.allowedSubnets.trim() !== '*') {
       const allowedPrefixes = config.allowedSubnets.split(',').map(s => s.trim()).filter(Boolean);
       const isAllowed = allowedPrefixes.some(prefix => clientIp.startsWith(prefix) || clientIp === prefix);
       if (!isAllowed) {
+        console.warn(`[TokenController] ⚠️ Blocked client IP ${clientIp}. Allowed subnets: ${config.allowedSubnets}`);
         return res.status(403).json({
           success: false,
-          message: `Forbidden: Client IP ${clientIp} is not in allowed hospital subnets`
+          message: `Forbidden: Client IP ${clientIp} is not in allowed hospital subnets (${config.allowedSubnets})`
         });
       }
     }

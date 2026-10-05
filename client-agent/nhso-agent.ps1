@@ -104,9 +104,22 @@ function Send-TokenToServer {
         }
     } catch {
         $err = $_.Exception.Message
+        $detail = ""
+        try {
+            $stream = $_.Exception.Response.GetResponseStream()
+            if ($stream) {
+                $reader = New-Object System.IO.StreamReader($stream)
+                $errBody = $reader.ReadToEnd()
+                if ($errBody) {
+                    $json = $errBody | ConvertFrom-Json -ErrorAction SilentlyContinue
+                    if ($json.message) { $detail = " - $($json.message)" }
+                    else { $detail = " - $errBody" }
+                }
+            }
+        } catch {}
         $nowStr = Get-Date -Format 'HH:mm:ss'
-        Write-Host "[$nowStr] Failed to send token: $err" -ForegroundColor Red
-        Write-AgentLog "Failed to send token: $err"
+        Write-Host "[$nowStr] Failed to send token: $err$detail" -ForegroundColor Red
+        Write-AgentLog "Failed to send token: $err$detail"
     }
 }
 

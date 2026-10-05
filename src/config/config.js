@@ -24,8 +24,8 @@ const config = {
   zoneCode: process.env.NHSO_ZONE_CODE || '05',
 
   // Agent Security Configuration
-  agentSecret: process.env.AGENT_SECRET || 'nhso-agent-secret-10677-rbr',
-  allowedSubnets: process.env.ALLOWED_SUBNETS || '10.,192.168.,172.16.,127.0.0.1,::1',
+  agentSecret: process.env.AGENT_SECRET || 'nhso-agent-secret-10677-rbh',
+  allowedSubnets: process.env.ALLOWED_SUBNETS || '10.,192.168.,172.,127.0.0.1,::1',
 
   // HOSxP Database Configuration
   db: {
