@@ -597,6 +597,10 @@
           <i data-lucide="shield-off" class="w-4 h-4"></i>
           <span>สิทธิที่ยกเว้นเทียบความตรงกัน (<span id="setting-exempt-tab-count">4</span>)</span>
         </button>
+        <button id="setting-tab-btn-noauth" onclick="switchSettingTab('noauth')" class="px-3.5 py-1.5 font-semibold text-xs rounded-xl text-slate-600 hover:text-slate-900 hover:bg-slate-200 transition flex items-center space-x-1.5 cursor-pointer">
+          <i data-lucide="key-round" class="w-4 h-4"></i>
+          <span>สิทธิที่ไม่ต้องมี Authen (<span id="setting-noauth-tab-count">4</span>)</span>
+        </button>
         <button id="setting-tab-btn-users" onclick="switchSettingTab('users')" class="px-3.5 py-1.5 font-semibold text-xs rounded-xl text-slate-600 hover:text-slate-900 hover:bg-slate-200 transition flex items-center space-x-1.5 cursor-pointer">
           <i data-lucide="users" class="w-4 h-4"></i>
           <span>ผู้ใช้งานที่ได้รับสิทธิ์ (<span id="setting-users-tab-count">0</span>)</span>
@@ -698,7 +702,99 @@
           </div>
         </div>
 
-        <!-- ================= SECTION 2: AUTHORIZED USERS ================= -->
+        <!-- ================= SECTION 2: NO-AUTHEN EXEMPT PTTYPES ================= -->
+        <div id="setting-section-noauth" class="space-y-6 hidden">
+          <!-- Information Banner -->
+          <div class="p-3.5 rounded-xl bg-blue-50/80 border border-blue-200 text-xs text-blue-900 flex items-start space-x-2.5">
+            <i data-lucide="info" class="w-4 h-4 text-blue-600 shrink-0 mt-0.5"></i>
+            <div>
+              <p class="font-bold text-blue-950">สิทธิที่ไม่ต้องบอกว่า "ยังไม่มี Authen" (No-Authen Exempt)</p>
+              <p class="text-blue-800 mt-0.5">ผู้รับบริการที่มีรหัสสิทธิตามรายการนี้ (เช่น 78, 79, 80, 88) จะไม่แสดงผลว่า "ยังไม่มี Authen" และไม่นำมานับในยอดเตือน "ยังไม่มี Authen"</p>
+            </div>
+          </div>
+
+          <!-- Add No-Authen Exempt Pttype Form -->
+          <div class="bg-slate-50 border border-slate-200 rounded-2xl p-4 space-y-3">
+            <h4 class="font-bold text-sm text-slate-800 flex items-center space-x-2">
+              <i data-lucide="plus-circle" class="w-4 h-4 text-emerald-600"></i>
+              <span>เพิ่มรหัสสิทธิที่ยกเว้นไม่ต้องมี Authen (จาก HOSxP pttype)</span>
+            </h4>
+
+            <div class="grid grid-cols-1 md:grid-cols-12 gap-3 items-end">
+              <!-- Search Pttype Input -->
+              <div class="md:col-span-5 relative">
+                <label class="block text-xs font-semibold text-slate-600 mb-1">ค้นหารหัสสิทธิ HOSxP (pttype หรือ ชื่อ)</label>
+                <div class="relative">
+                  <i data-lucide="search" class="w-4 h-4 text-slate-400 absolute left-3 top-2.5"></i>
+                  <input type="text" id="setting-search-noauth-pttype" oninput="debounceSearchHosNoauthPttype()" placeholder="เช่น 78, 79, 80, 88..." class="w-full pl-9 pr-3 py-2 text-xs bg-white border border-slate-300 rounded-xl focus:ring-2 focus:ring-emerald-500 outline-none">
+                </div>
+                <!-- Dropdown search results -->
+                <div id="setting-noauth-pttype-dropdown" class="hidden absolute left-0 right-0 z-20 mt-1 bg-white border border-slate-200 rounded-xl shadow-xl max-h-48 overflow-y-auto custom-scroll p-1 divide-y divide-slate-100">
+                  <!-- dynamic list -->
+                </div>
+              </div>
+
+              <!-- Note Input -->
+              <div class="md:col-span-4">
+                <label class="block text-xs font-semibold text-slate-600 mb-1">หมายเหตุ (ถ้ามี)</label>
+                <input type="text" id="setting-noauth-exempt-note" placeholder="เช่น ต่างด้าว, สถานะและสิทธิ" class="w-full px-3 py-2 text-xs bg-white border border-slate-300 rounded-xl focus:ring-2 focus:ring-emerald-500 outline-none">
+              </div>
+
+              <!-- Submit Button -->
+              <div class="md:col-span-3">
+                <button onclick="submitAddNoauthExemptPttype()" id="btn-submit-add-noauth-exempt" class="w-full py-2 bg-emerald-600 hover:bg-emerald-700 text-white font-semibold text-xs rounded-xl shadow-sm transition flex items-center justify-center space-x-1.5 cursor-pointer">
+                  <i data-lucide="plus" class="w-4 h-4"></i>
+                  <span>เพิ่มสิทธิยกเว้น Authen</span>
+                </button>
+              </div>
+            </div>
+
+            <!-- Preview Selected Pttype -->
+            <div id="selected-noauth-pttype-preview" class="hidden text-xs text-emerald-800 bg-emerald-50 border border-emerald-200 px-3 py-1.5 rounded-lg flex items-center justify-between">
+              <div class="flex items-center space-x-2">
+                <span class="font-mono font-bold px-1.5 py-0.2 bg-emerald-200 rounded" id="preview-noauth-pttype-code">-</span>
+                <span class="text-slate-500">•</span>
+                <span id="preview-noauth-pttype-name">-</span>
+              </div>
+              <button onclick="clearSelectedHosNoauthPttype()" class="text-slate-400 hover:text-slate-700 cursor-pointer"><i data-lucide="x" class="w-3.5 h-3.5"></i></button>
+            </div>
+          </div>
+
+          <!-- No-Authen Exempt Pttypes Table -->
+          <div class="space-y-3">
+            <div class="flex items-center justify-between">
+              <h4 class="font-bold text-sm text-slate-800 flex items-center space-x-2">
+                <i data-lucide="key-round" class="w-4 h-4 text-blue-600"></i>
+                <span>รายการสิทธิที่ไม่ต้องมี Authen (<span id="setting-noauth-exempt-count">0</span> รายการ)</span>
+              </h4>
+              <button onclick="fetchNoauthExemptPttypes()" class="text-xs text-slate-500 hover:text-emerald-700 flex items-center space-x-1 cursor-pointer">
+                <i data-lucide="refresh-cw" class="w-3.5 h-3.5"></i>
+                <span>รีเฟรช</span>
+              </button>
+            </div>
+
+            <div class="border border-slate-200 rounded-2xl overflow-hidden shadow-2xs">
+              <table class="w-full text-xs text-left border-collapse">
+                <thead>
+                  <tr class="bg-slate-100 text-slate-700 font-semibold border-b border-slate-200">
+                    <th class="py-2.5 px-3">#</th>
+                    <th class="py-2.5 px-3">รหัส (pttype)</th>
+                    <th class="py-2.5 px-3">ชื่อสิทธิการรักษา (HOSxP)</th>
+                    <th class="py-2.5 px-3">หมายเหตุ</th>
+                    <th class="py-2.5 px-3 text-center">สถานะ</th>
+                    <th class="py-2.5 px-3">วันที่เพิ่ม</th>
+                    <th class="py-2.5 px-3 text-center">จัดการ</th>
+                  </tr>
+                </thead>
+                <tbody id="setting-noauth-exempt-table-body" class="divide-y divide-slate-100 bg-white">
+                  <!-- dynamic rows -->
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
+        <!-- ================= SECTION 3: AUTHORIZED USERS ================= -->
         <div id="setting-section-users" class="space-y-6 hidden">
           <!-- Add User Section -->
           <div class="bg-slate-50 border border-slate-200 rounded-2xl p-4 space-y-3">
@@ -819,7 +915,20 @@
     let selectedHosPttype = null;
     let currentHosPttypeSearchResults = [];
     let searchHosPttypeTimer = null;
+
+    // No-Authen Exempt pttype state (สิทธิ์ที่ไม่ต้องบอกว่ายังไม่มี authen)
+    let noAuthenExemptPttypes = new Set(['78', '79', '80', '88']);
+    let selectedHosNoauthPttype = null;
+    let currentHosNoauthSearchResults = [];
+    let searchHosNoauthTimer = null;
     let activeSettingTab = 'exempt';
+
+    function isNoAuthenExempt(visit) {
+      if (!visit || !noAuthenExemptPttypes) return false;
+      const pt = (visit.pttype || '').trim().toUpperCase();
+      const vppt = (visit.vp_pttype || '').trim().toUpperCase();
+      return Boolean(noAuthenExemptPttypes.has(pt) || (vppt && noAuthenExemptPttypes.has(vppt)));
+    }
 
     // Initialize application on load
     document.addEventListener('DOMContentLoaded', async () => {
@@ -844,6 +953,7 @@
 
       // Load exempt pttypes from DB
       await loadExemptPttypes();
+      await loadNoAuthenExemptPttypes();
 
       // Check system health
       checkSystemHealth();
@@ -1125,6 +1235,7 @@
         return Boolean(claim && claim.trim());
       }).length;
       const noAuth = rawVisits.filter(v => {
+        if (isNoAuthenExempt(v)) return false;
         const hos = Boolean(v.auth_code && v.auth_code.trim());
         const api = Boolean((v.dflow_data?.claim_code && v.dflow_data.claim_code.trim()) || (v.auth_code_from_api && v.auth_code_from_api.trim()));
         return !hos && !api;
@@ -1189,7 +1300,10 @@
 
         // Tab filters
         if (currentAuthFilter === 'unsaved_dflow' && v.dflow_saved) return false;
-        if (currentAuthFilter === 'no_auth' && (hasHosAuth || hasApiAuth)) return false;
+        if (currentAuthFilter === 'no_auth') {
+          if (isNoAuthenExempt(v)) return false;
+          if (hasHosAuth || hasApiAuth) return false;
+        }
         if (currentAuthFilter === 'right_match') {
           const match = checkRightMatch(v);
           if (!match.checked || match.isExempt || !match.isMatch) return false;
@@ -1234,6 +1348,9 @@
           </div>
         `;
       }
+      if (isNoAuthenExempt(visit)) {
+        return `<span class="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-medium bg-slate-100 text-slate-500 border border-slate-200" title="สิทธินี้ (${visit.pttype}) ยกเว้นไม่ต้องมี Authen Code">ไม่ต้องมี Authen</span>`;
+      }
       return `<span class="text-slate-400 text-sm italic">-</span>`;
     }
 
@@ -1257,6 +1374,14 @@
             </div>
             ${isMismatch ? `<div><span class="text-xs font-semibold text-rose-700 bg-rose-50 px-2 py-0.5 rounded border border-rose-200 inline-flex items-center shadow-2xs" title="รหัส Authen สปสช. (${apiAuthCode}) ไม่ตรงกับใน HOSxP (${hosAuthCode})"><i data-lucide="alert-circle" class="w-3.5 h-3.5 mr-1 text-rose-600"></i>ไม่ตรงกับ Hosxp</span></div>` : ''}
           </div>
+        `;
+      }
+
+      if (isNoAuthenExempt(visit)) {
+        return `
+          <span class="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-medium bg-slate-100 text-slate-500 border border-slate-200" title="สิทธินี้ (${visit.pttype}) ยกเว้นไม่ต้องมี Authen Code">
+            ไม่ต้องมี Authen
+          </span>
         `;
       }
 
@@ -1683,7 +1808,8 @@
     function renderHosSyncActionCell(v) {
       const match = checkRightMatch(v);
       const hasHosAuth = Boolean(v.auth_code && v.auth_code.trim());
-      const isComplete = match.checked && (match.isMatch || match.isExempt) && hasHosAuth;
+      const isNoAuthExempt = isNoAuthenExempt(v);
+      const isComplete = match.checked && (match.isMatch || match.isExempt) && (hasHosAuth || isNoAuthExempt);
 
       if (isComplete) {
         return `
@@ -2673,17 +2799,20 @@
                 <tr class="${isAuthMismatch ? 'bg-rose-50/70' : 'hover:bg-slate-50/60'} transition">
                   <td class="py-3.5 px-4 font-semibold text-slate-700">Authen Code</td>
                   <td class="py-3.5 px-4 font-mono font-bold text-base ${hosAuth ? 'text-blue-700' : 'text-slate-400 font-normal'}">
-                    ${hosAuth || 'ไม่มีใน HOSxP'}
+                    ${hosAuth || (isNoAuthenExempt(visit) ? '<span class="text-xs font-sans text-slate-500 font-normal bg-slate-100 px-2 py-0.5 rounded border border-slate-200">ไม่ต้องมี Authen</span>' : 'ไม่มีใน HOSxP')}
                   </td>
                   <td class="py-3.5 px-4 font-mono font-bold text-base ${apiAuth ? 'text-emerald-700' : 'text-slate-400 font-normal'}">
-                    ${apiAuth || 'ไม่มีใน สปสช.'}
+                    ${apiAuth || (isNoAuthenExempt(visit) ? '<span class="text-xs font-sans text-slate-500 font-normal bg-slate-100 px-2 py-0.5 rounded border border-slate-200">ไม่ต้องมี Authen</span>' : 'ไม่มีใน สปสช.')}
                   </td>
                   <td class="py-3.5 px-4 text-center">
                     ${isAuthMismatch
                       ? `<span class="px-2.5 py-1 bg-rose-100 text-rose-800 border border-rose-300 rounded-lg font-bold text-xs inline-flex items-center shadow-2xs"><i data-lucide="alert-circle" class="w-3.5 h-3.5 mr-1"></i>ไม่ตรงกับ Hosxp</span>`
                       : (isAuthMatch
                         ? `<span class="px-2.5 py-1 bg-emerald-100 text-emerald-800 border border-emerald-300 rounded-lg font-semibold text-xs inline-flex items-center"><i data-lucide="check" class="w-3.5 h-3.5 mr-1"></i>ตรงกัน</span>`
-                        : (apiAuth ? `<span class="px-2.5 py-1 bg-blue-100 text-blue-800 border border-blue-300 rounded-lg text-xs font-medium">มีใน สปสช.</span>` : '<span class="text-slate-400">-</span>')
+                        : (isNoAuthenExempt(visit)
+                          ? `<span class="px-2 py-0.5 rounded-full text-xs text-slate-500 bg-slate-100 border border-slate-200">ไม่ต้องมี Authen</span>`
+                          : (apiAuth ? `<span class="px-2.5 py-1 bg-blue-100 text-blue-800 border border-blue-300 rounded-lg text-xs font-medium">มีใน สปสช.</span>` : '<span class="text-slate-400">-</span>')
+                        )
                       )}
                   </td>
                 </tr>
@@ -3454,26 +3583,51 @@
       }
     }
 
+    async function loadNoAuthenExemptPttypes() {
+      try {
+        const res = await fetch('/api/no-authen-exempt-pttypes?active=true');
+        const data = await res.json();
+        if (data.success && Array.isArray(data.data)) {
+          noAuthenExemptPttypes = new Set(data.data.map(d => String(d.pttype || '').trim().toUpperCase()));
+        }
+      } catch (err) {
+        console.error('Failed to load no-authen exempt pttypes:', err);
+      }
+    }
+
     function switchSettingTab(tab) {
       activeSettingTab = tab;
       const tabExemptBtn = document.getElementById('setting-tab-btn-exempt');
+      const tabNoauthBtn = document.getElementById('setting-tab-btn-noauth');
       const tabUsersBtn = document.getElementById('setting-tab-btn-users');
       const sectionExempt = document.getElementById('setting-section-exempt');
+      const sectionNoauth = document.getElementById('setting-section-noauth');
       const sectionUsers = document.getElementById('setting-section-users');
       const footerInfo = document.getElementById('setting-footer-info');
 
+      // Reset buttons
+      [tabExemptBtn, tabNoauthBtn, tabUsersBtn].forEach(btn => {
+        if (btn) btn.className = 'px-3.5 py-1.5 font-semibold text-xs rounded-xl text-slate-600 hover:text-slate-900 hover:bg-slate-200 transition flex items-center space-x-1.5 cursor-pointer';
+      });
+
+      // Hide all sections
+      if (sectionExempt) sectionExempt.classList.add('hidden');
+      if (sectionNoauth) sectionNoauth.classList.add('hidden');
+      if (sectionUsers) sectionUsers.classList.add('hidden');
+
       if (tab === 'exempt') {
         if (tabExemptBtn) tabExemptBtn.className = 'px-3.5 py-1.5 font-bold text-xs rounded-xl bg-emerald-600 text-white shadow-xs transition flex items-center space-x-1.5 cursor-pointer';
-        if (tabUsersBtn) tabUsersBtn.className = 'px-3.5 py-1.5 font-semibold text-xs rounded-xl text-slate-600 hover:text-slate-900 hover:bg-slate-200 transition flex items-center space-x-1.5 cursor-pointer';
         if (sectionExempt) sectionExempt.classList.remove('hidden');
-        if (sectionUsers) sectionUsers.classList.add('hidden');
         if (footerInfo) footerInfo.innerHTML = `ตาราง <code class="font-mono text-slate-700 bg-slate-200 px-1 py-0.5 rounded">d-flow.nhso_exempt_pttypes</code>`;
         fetchExemptPttypes();
+      } else if (tab === 'noauth') {
+        if (tabNoauthBtn) tabNoauthBtn.className = 'px-3.5 py-1.5 font-bold text-xs rounded-xl bg-emerald-600 text-white shadow-xs transition flex items-center space-x-1.5 cursor-pointer';
+        if (sectionNoauth) sectionNoauth.classList.remove('hidden');
+        if (footerInfo) footerInfo.innerHTML = `ตาราง <code class="font-mono text-slate-700 bg-slate-200 px-1 py-0.5 rounded">d-flow.nhso_no_authen_exempt_pttypes</code>`;
+        fetchNoauthExemptPttypes();
       } else {
         if (tabUsersBtn) tabUsersBtn.className = 'px-3.5 py-1.5 font-bold text-xs rounded-xl bg-emerald-600 text-white shadow-xs transition flex items-center space-x-1.5 cursor-pointer';
-        if (tabExemptBtn) tabExemptBtn.className = 'px-3.5 py-1.5 font-semibold text-xs rounded-xl text-slate-600 hover:text-slate-900 hover:bg-slate-200 transition flex items-center space-x-1.5 cursor-pointer';
         if (sectionUsers) sectionUsers.classList.remove('hidden');
-        if (sectionExempt) sectionExempt.classList.add('hidden');
         if (footerInfo) footerInfo.innerHTML = `ตาราง <code class="font-mono text-slate-700 bg-slate-200 px-1 py-0.5 rounded">d-flow.nhso_auth_users</code>`;
         fetchAuthorizedUsers();
       }
@@ -3496,6 +3650,7 @@
       modal.classList.add('hidden');
       clearSelectedOpdUser();
       clearSelectedHosPttype();
+      clearSelectedHosNoauthPttype();
     }
 
     async function fetchAuthorizedUsers() {
@@ -3917,6 +4072,226 @@
       }
     }
 
+    // ==========================================
+    // No-Authen Exempt Pttypes (สิทธิ์ที่ไม่ต้องบอกว่ายังไม่มี authen)
+    // ==========================================
+
+    async function fetchNoauthExemptPttypes() {
+      const tbody = document.getElementById('setting-noauth-exempt-table-body');
+      const countEl = document.getElementById('setting-noauth-exempt-count');
+      const tabCountEl = document.getElementById('setting-noauth-tab-count');
+      if (!tbody) return;
+
+      tbody.innerHTML = `<tr><td colspan="7" class="text-center py-6 text-slate-400">กำลังโหลดรายการสิทธิที่ไม่ต้องมี Authen...</td></tr>`;
+
+      try {
+        const res = await fetch('/api/no-authen-exempt-pttypes');
+        const data = await res.json();
+        if (data.success) {
+          const items = data.data || [];
+          if (countEl) countEl.textContent = items.length;
+          if (tabCountEl) tabCountEl.textContent = items.length;
+
+          // Update active set
+          noAuthenExemptPttypes = new Set(items.filter(i => Number(i.is_active) === 1).map(i => String(i.pttype).trim().toUpperCase()));
+
+          if (items.length === 0) {
+            tbody.innerHTML = `<tr><td colspan="7" class="text-center py-6 text-slate-400">ยังไม่มีสิทธิที่ยกเว้นไม่ต้องมี Authen</td></tr>`;
+            return;
+          }
+
+          tbody.innerHTML = items.map((item, idx) => {
+            const isActive = Number(item.is_active) === 1;
+            const statusBadge = isActive
+              ? `<span class="px-2 py-0.5 rounded-full text-[10px] font-semibold bg-emerald-100 text-emerald-800 flex items-center justify-center space-x-1 w-fit mx-auto"><span class="w-1.5 h-1.5 rounded-full bg-emerald-600"></span><span>เปิดใช้งาน</span></span>`
+              : `<span class="px-2 py-0.5 rounded-full text-[10px] font-semibold bg-slate-200 text-slate-600 flex items-center justify-center space-x-1 w-fit mx-auto"><span class="w-1.5 h-1.5 rounded-full bg-slate-500"></span><span>ปิดใช้งาน</span></span>`;
+
+            const dateStr = item.created_at ? new Date(item.created_at).toLocaleDateString('th-TH') : '-';
+
+            return `
+              <tr class="hover:bg-slate-50 transition border-b border-slate-100">
+                <td class="py-2.5 px-3 text-slate-400 font-mono">${idx + 1}</td>
+                <td class="py-2.5 px-3">
+                  <span class="font-mono font-bold px-2 py-0.5 rounded bg-blue-50 text-blue-800 border border-blue-200 text-xs">${escapeHtml(item.pttype)}</span>
+                </td>
+                <td class="py-2.5 px-3 font-medium text-slate-800">${escapeHtml(item.name || '-')}</td>
+                <td class="py-2.5 px-3 text-slate-500 text-xs">${escapeHtml(item.note || '-')}</td>
+                <td class="py-2.5 px-3 text-center">${statusBadge}</td>
+                <td class="py-2.5 px-3 text-slate-400 text-[11px]">${dateStr}</td>
+                <td class="py-2.5 px-3 text-center">
+                  <div class="flex items-center justify-center space-x-1">
+                    <button onclick="toggleNoauthExemptStatus(${item.id}, ${item.is_active})" title="${isActive ? 'ปิดการยกเว้น' : 'เปิดการยกเว้น'}" class="p-1 rounded hover:bg-slate-200 text-slate-600 cursor-pointer">
+                      <i data-lucide="${isActive ? 'pause-circle' : 'play-circle'}" class="w-4 h-4 ${isActive ? 'text-amber-600' : 'text-emerald-600'}"></i>
+                    </button>
+                    <button onclick="deleteNoauthExemptPttype(${item.id}, '${escapeHtml(item.pttype)}')" title="ลบออกจากรายการยกเว้น" class="p-1 rounded hover:bg-rose-100 text-rose-600 cursor-pointer">
+                      <i data-lucide="trash-2" class="w-4 h-4"></i>
+                    </button>
+                  </div>
+                </td>
+              </tr>
+            `;
+          }).join('');
+          lucide.createIcons();
+        } else {
+          tbody.innerHTML = `<tr><td colspan="7" class="text-center py-6 text-rose-500">โหลดข้อมูลไม่สำเร็จ: ${escapeHtml(data.message)}</td></tr>`;
+        }
+      } catch (err) {
+        console.error('Error fetching no-authen exempt pttypes:', err);
+        tbody.innerHTML = `<tr><td colspan="7" class="text-center py-6 text-rose-500">เกิดข้อผิดพลาดในการโหลดข้อมูล</td></tr>`;
+      }
+    }
+
+    function debounceSearchHosNoauthPttype() {
+      clearTimeout(searchHosNoauthTimer);
+      searchHosNoauthTimer = setTimeout(async () => {
+        const q = document.getElementById('setting-search-noauth-pttype').value.trim();
+        const dropdown = document.getElementById('setting-noauth-pttype-dropdown');
+        if (q.length < 1) {
+          dropdown.classList.add('hidden');
+          dropdown.innerHTML = '';
+          currentHosNoauthSearchResults = [];
+          return;
+        }
+
+        try {
+          const res = await fetch('/api/no-authen-exempt-pttypes/search?q=' + encodeURIComponent(q));
+          const data = await res.json();
+          if (data.success && data.data?.length > 0) {
+            currentHosNoauthSearchResults = data.data;
+            dropdown.innerHTML = currentHosNoauthSearchResults.map((p, idx) => `
+              <div onclick="selectHosNoauthPttypeByIndex(${idx})" class="p-2 hover:bg-emerald-50 cursor-pointer rounded-lg flex items-center justify-between transition">
+                <div class="flex items-center space-x-2">
+                  <span class="font-mono font-bold text-slate-800 text-xs bg-slate-100 px-1.5 py-0.5 rounded">${escapeHtml(p.pttype)}</span>
+                  <span class="text-slate-700 text-xs">${escapeHtml(p.name || '')}</span>
+                </div>
+                <span class="text-[10px] text-emerald-600 font-semibold">+ เลือก</span>
+              </div>
+            `).join('');
+            dropdown.classList.remove('hidden');
+          } else {
+            currentHosNoauthSearchResults = [];
+            dropdown.innerHTML = `<div class="p-3 text-center text-slate-400 text-xs">ไม่พบรหัสสิทธิที่ตรงกับ "${escapeHtml(q)}" ใน HOSxP</div>`;
+            dropdown.classList.remove('hidden');
+          }
+        } catch (err) {
+          console.error('Search HOSxP no-authen pttype error:', err);
+        }
+      }, 300);
+    }
+
+    function selectHosNoauthPttypeByIndex(idx) {
+      const p = currentHosNoauthSearchResults[idx];
+      if (!p) return;
+      selectedHosNoauthPttype = p;
+      document.getElementById('setting-noauth-pttype-dropdown').classList.add('hidden');
+      document.getElementById('setting-search-noauth-pttype').value = p.pttype;
+      document.getElementById('preview-noauth-pttype-code').textContent = p.pttype;
+      document.getElementById('preview-noauth-pttype-name').textContent = p.name || '-';
+      document.getElementById('selected-noauth-pttype-preview').classList.remove('hidden');
+      lucide.createIcons();
+    }
+
+    function clearSelectedHosNoauthPttype() {
+      selectedHosNoauthPttype = null;
+      const searchInput = document.getElementById('setting-search-noauth-pttype');
+      if (searchInput) searchInput.value = '';
+      const previewEl = document.getElementById('selected-noauth-pttype-preview');
+      if (previewEl) previewEl.classList.add('hidden');
+      const dropdown = document.getElementById('setting-noauth-pttype-dropdown');
+      if (dropdown) dropdown.classList.add('hidden');
+    }
+
+    async function submitAddNoauthExemptPttype() {
+      if (!selectedHosNoauthPttype) {
+        const manualCode = document.getElementById('setting-search-noauth-pttype').value.trim();
+        if (manualCode) {
+          selectedHosNoauthPttype = { pttype: manualCode, name: manualCode };
+        } else {
+          showToast('กรุณาระบุหรือเลือกรหัสสิทธิ (pttype) ก่อน', 'error');
+          return;
+        }
+      }
+
+      const noteInput = document.getElementById('setting-noauth-exempt-note');
+      const note = noteInput ? noteInput.value.trim() : '';
+      const btn = document.getElementById('btn-submit-add-noauth-exempt');
+      if (btn) btn.disabled = true;
+
+      try {
+        const res = await fetch('/api/no-authen-exempt-pttypes', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            pttype: selectedHosNoauthPttype.pttype,
+            name: selectedHosNoauthPttype.name,
+            note
+          })
+        });
+        const data = await res.json();
+        if (data.success) {
+          showToast(`เพิ่มสิทธิยกเว้น Authen '${selectedHosNoauthPttype.pttype}' เรียบร้อยแล้ว`, 'success');
+          clearSelectedHosNoauthPttype();
+          if (noteInput) noteInput.value = '';
+          await fetchNoauthExemptPttypes();
+          updateKpis();
+          applyClientFilter();
+        } else {
+          showToast(`เพิ่มสิทธิไม่สำเร็จ: ${data.message}`, 'error');
+        }
+      } catch (err) {
+        console.error('Add no-authen exempt pttype error:', err);
+        showToast('เกิดข้อผิดพลาดในการเพิ่มสิทธิยกเว้น', 'error');
+      } finally {
+        if (btn) btn.disabled = false;
+      }
+    }
+
+    async function toggleNoauthExemptStatus(id, currentStatus) {
+      const newStatus = Number(currentStatus) === 1 ? 0 : 1;
+      try {
+        const res = await fetch(`/api/no-authen-exempt-pttypes/${id}`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ is_active: newStatus })
+        });
+        const data = await res.json();
+        if (data.success) {
+          showToast(newStatus === 1 ? 'เปิดใช้งานสิทธิยกเว้นเรียบร้อย' : 'ระงับสิทธิยกเว้นเรียบร้อย', 'info');
+          await fetchNoauthExemptPttypes();
+          updateKpis();
+          applyClientFilter();
+        } else {
+          showToast(`ปรับปรุงไม่สำเร็จ: ${data.message}`, 'error');
+        }
+      } catch (err) {
+        console.error('Toggle no-authen exempt status error:', err);
+        showToast('เกิดข้อผิดพลาดในการเปลี่ยนสถานะ', 'error');
+      }
+    }
+
+    async function deleteNoauthExemptPttype(id, pttype) {
+      if (!confirm(`คุณแน่ใจหรือไม่ว่าต้องการลบสิทธิยกเว้น "${pttype}" ออกจากระบบ?`)) {
+        return;
+      }
+      try {
+        const res = await fetch(`/api/no-authen-exempt-pttypes/${id}`, {
+          method: 'DELETE'
+        });
+        const data = await res.json();
+        if (data.success) {
+          showToast(`ลบสิทธิยกเว้น "${pttype}" เรียบร้อยแล้ว`, 'success');
+          await fetchNoauthExemptPttypes();
+          updateKpis();
+          applyClientFilter();
+        } else {
+          showToast(`ลบสิทธิไม่สำเร็จ: ${data.message}`, 'error');
+        }
+      } catch (err) {
+        console.error('Delete no-authen exempt pttype error:', err);
+        showToast('เกิดข้อผิดพลาดในการลบสิทธิยกเว้น', 'error');
+      }
+    }
+
     // Close dropdowns when clicking outside
     document.addEventListener('click', (e) => {
       const opdDropdown = document.getElementById('setting-opduser-dropdown');
@@ -3929,6 +4304,12 @@
       const pttypeSearchInput = document.getElementById('setting-search-pttype');
       if (pttypeDropdown && !pttypeDropdown.contains(e.target) && e.target !== pttypeSearchInput) {
         pttypeDropdown.classList.add('hidden');
+      }
+
+      const noauthPttypeDropdown = document.getElementById('setting-noauth-pttype-dropdown');
+      const noauthPttypeSearchInput = document.getElementById('setting-search-noauth-pttype');
+      if (noauthPttypeDropdown && !noauthPttypeDropdown.contains(e.target) && e.target !== noauthPttypeSearchInput) {
+        noauthPttypeDropdown.classList.add('hidden');
       }
     });
   </script>

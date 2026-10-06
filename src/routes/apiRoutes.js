@@ -9,6 +9,7 @@ const vnAuthenController = require('../controllers/vnAuthenController');
 const hosSyncController = require('../controllers/hosSyncController');
 const authController = require('../controllers/authController');
 const exemptPttypeController = require('../controllers/exemptPttypeController');
+const noAuthenExemptController = require('../controllers/noAuthenExemptController');
 const { authenticate, requireAdmin } = require('../middleware/authMiddleware');
 
 // 0. Authentication & User Management
@@ -29,6 +30,13 @@ router.get('/api/exempt-pttypes/search', authenticate, requireAdmin, (req, res) 
 router.post('/api/exempt-pttypes', authenticate, requireAdmin, (req, res) => exemptPttypeController.add(req, res));
 router.put('/api/exempt-pttypes/:id', authenticate, requireAdmin, (req, res) => exemptPttypeController.update(req, res));
 router.delete('/api/exempt-pttypes/:id', authenticate, requireAdmin, (req, res) => exemptPttypeController.delete(req, res));
+
+// 2. No-Authen Exempt Pttypes (สิทธิ์ที่ไม่ต้องบอกว่ายังไม่มี authen)
+router.get('/api/no-authen-exempt-pttypes', (req, res) => noAuthenExemptController.list(req, res));
+router.get('/api/no-authen-exempt-pttypes/search', authenticate, requireAdmin, (req, res) => noAuthenExemptController.searchHosPttypes(req, res));
+router.post('/api/no-authen-exempt-pttypes', authenticate, requireAdmin, (req, res) => noAuthenExemptController.add(req, res));
+router.put('/api/no-authen-exempt-pttypes/:id', authenticate, requireAdmin, (req, res) => noAuthenExemptController.update(req, res));
+router.delete('/api/no-authen-exempt-pttypes/:id', authenticate, requireAdmin, (req, res) => noAuthenExemptController.delete(req, res));
 router.get('/health', (req, res) => tokenController.health(req, res));
 router.get('/api/db/health', (req, res) => tokenController.dbHealth(req, res));
 router.get('/api/db/dflow-health', (req, res) => tokenController.dflowDbHealth(req, res));
