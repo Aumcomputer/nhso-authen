@@ -24,6 +24,11 @@ function isRbrOutCup(hcode) {
 }
 
 /**
+ * รหัสสถานพยาบาลระดับปฐมภูมิ/รพ.สต. ที่แม้ hospmain จะเป็น 10677 แต่ต้องให้สิทธิเป็น 92 (นอก CUP ในจังหวัด)
+ */
+const RBR_UCS_OUT_CUP_SUB_CENTERS = ['14317', '08003', '08005'];
+
+/**
  * Format CID into 1-4-5-2-1 hyphenated format (e.g. 3-8015-00050-24-2)
  */
 function formatCid(cid) {
@@ -38,10 +43,11 @@ function formatCid(cid) {
 /**
  * Map NHSO Right from API to HOSxP pttype code
  */
-function mapNhsoToHosPttype(mainId, subId, hospmain, currentHosPttype = '') {
+function mapNhsoToHosPttype(mainId, subId, hospmain, hospsub = '', currentHosPttype = '') {
   const main = (mainId || '').trim().toUpperCase();
   const sub = (subId || '').trim().toUpperCase();
   const hcode = (hospmain || '').trim();
+  const subcode = (hospsub || '').trim();
   const isOwnHosp = (hcode === '10677');
   const isOutCup = isRbrOutCup(hcode);
 
@@ -55,6 +61,10 @@ function mapNhsoToHosPttype(mainId, subId, hospmain, currentHosPttype = '') {
 
   // 2. บัตรทอง (UCS / WEL)
   if (main === 'UCS' || main === 'WEL') {
+    // ข้อยกเว้นพิเศษ: hospmain 10677 แต่ hospsub เป็น 14317, 08003, 08005 ให้เป็น 92
+    if (isOwnHosp && RBR_UCS_OUT_CUP_SUB_CENTERS.includes(subcode)) {
+      return '92';
+    }
     if (isOwnHosp) return '91';
     if (isOutCup) return '92';
     return '93';
@@ -199,7 +209,7 @@ class HosSyncService {
     const hospmainTarget = fund?.hospMain?.hcode || dflowData?.hospmain_code || authenJson?.hmain || currentHos.hospmain || null;
     const hospsubTarget = fund?.hospSub?.hcode || dflowData?.hospsub_code || currentHos.hospsub || null;
 
-    const mappedPttype = mapNhsoToHosPttype(mainInsclId, subInsclId, hospmainTarget, currentHos.pttype);
+    const mappedPttype = mapNhsoToHosPttype(mainInsclId, subInsclId, hospmainTarget, hospsubTarget, currentHos.pttype);
 
     // pttypeno rule: cardId if present, else formatted cid
     let pttypenoTarget = null;

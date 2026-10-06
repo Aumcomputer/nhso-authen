@@ -1428,6 +1428,11 @@
     const RBR_SUB_CENTER_PREFIXES = ['078', '079', '142', '143', '238', '240', '999'];
 
     /**
+     * รหัสสถานพยาบาลระดับปฐมภูมิ/รพ.สต. ที่แม้ hospmain จะเป็น 10677 แต่ต้องให้สิทธิเป็น 92 (นอก CUP ในจังหวัด)
+     */
+    const RBR_UCS_OUT_CUP_SUB_CENTERS = ['14317', '08003', '08005'];
+
+    /**
      * ตรวจสอบว่า hospmain เป็นสถานพยาบาลในจังหวัดราชบุรี (นอก CUP รพ.ราชบุรี) หรือไม่
      */
     function isRbrOutCup(hospmain) {
@@ -1448,7 +1453,9 @@
           subinscl_id: visit.dflow_data.subinscl_id || '',
           subinscl_name: visit.dflow_data.subinscl_name || '',
           hospmain_code: visit.dflow_data.hospmain_code || '',
-          hospmain_name: visit.dflow_data.hospmain_name || ''
+          hospmain_name: visit.dflow_data.hospmain_name || '',
+          hospsub_code: visit.dflow_data.hospsub_code || '',
+          hospsub_name: visit.dflow_data.hospsub_name || ''
         };
       }
       const nhsoData = nhsoCache.get(visit.cid);
@@ -1460,7 +1467,9 @@
           subinscl_id: fund.subInscl?.id || '',
           subinscl_name: fund.subInscl?.name || '',
           hospmain_code: fund.hospMain?.hcode || '',
-          hospmain_name: fund.hospMain?.hname || ''
+          hospmain_name: fund.hospMain?.hname || '',
+          hospsub_code: fund.hospSub?.hcode || '',
+          hospsub_name: fund.hospSub?.hname || ''
         };
       }
       return null;
@@ -1483,6 +1492,7 @@
       const main = (apiRight.maininscl_id || '').trim().toUpperCase();
       const sub = (apiRight.subinscl_id || '').trim().toUpperCase();
       const hospmain = (apiRight.hospmain_code || visit.hospmain || '').trim();
+      const hospsub = (apiRight.hospsub_code || visit.hospsub || visit.vp_hospsub || '').trim();
       const hosPttype = (visit.pttype || '').trim();
       const isOwnHosp = (hospmain === '10677');
       const isOutCupRbr = isRbrOutCup(hospmain);
@@ -1508,7 +1518,11 @@
       }
       // 2. สิทธิบัตรทอง (UCS / WEL)
       else if (main === 'UCS' || main === 'WEL') {
-        if (isOwnHosp) {
+        // ข้อยกเว้นพิเศษ: hospmain 10677 แต่ hospsub เป็น 14317, 08003, 08005 ให้เป็น 92
+        if (isOwnHosp && RBR_UCS_OUT_CUP_SUB_CENTERS.includes(hospsub)) {
+          expectedPttypes = ['92', '9C'];
+          expectedLabel = '92 (บัตรทอง นอก CUP - รพ.สต.)';
+        } else if (isOwnHosp) {
           expectedPttypes = ['91', '45', '9C'];
           expectedLabel = '91 (บัตรทอง ในเขต)';
         } else if (isOutCupRbr) {
