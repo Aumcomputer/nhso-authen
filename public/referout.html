@@ -110,16 +110,17 @@
           <input type="date" id="refer-date" class="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-lg text-sm text-slate-800 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition">
         </div>
 
-        <!-- Filter Status Authen -->
+        <!-- Filter Status MOPH Refer -->
         <div class="md:col-span-3">
           <label class="block text-xs font-semibold text-slate-700 mb-1.5">
-            <i data-lucide="filter" class="w-3.5 h-3.5 inline mr-1 text-slate-500"></i>สถานะ Authen Code
+            <i data-lucide="filter" class="w-3.5 h-3.5 inline mr-1 text-slate-500"></i>สถานะ MOPH Refer / ตรวจสิทธิ
           </label>
           <select id="auth-filter" onchange="applyClientFilter()" class="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-lg text-sm text-slate-800 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition">
             <option value="all">ทั้งหมด (All Refer Out)</option>
-            <option value="no_auth">เฉพาะที่ยังไม่มี Authen (No Auth)</option>
-            <option value="has_auth">เฉพาะที่มี Authen แล้ว (Has Auth)</option>
-            <option value="mismatch">เฉพาะที่รหัสไม่ตรงกับ Hosxp (Mismatch)</option>
+            <option value="has_moph">ส่งเข้า MOPH Refer แล้ว</option>
+            <option value="no_moph">ยังไม่ส่ง MOPH Refer</option>
+            <option value="dflow_saved">ตรวจสิทธิ สปสช. แล้ว (ใน DB)</option>
+            <option value="not_saved">ยังไม่ได้ตรวจสิทธิ สปสช.</option>
           </select>
         </div>
 
@@ -169,36 +170,36 @@
         </div>
       </div>
 
-      <!-- Has Auth Code in HOS -->
+      <!-- Has MOPH Refer -->
       <div class="bg-white rounded-xl p-3.5 border border-slate-200 shadow-sm flex items-center space-x-3">
         <div class="p-2.5 bg-emerald-50 text-emerald-600 rounded-lg">
           <i data-lucide="check-circle-2" class="w-5 h-5"></i>
         </div>
         <div>
-          <p class="text-xs text-slate-500 font-medium">มี Authen ใน HOS</p>
-          <p id="kpi-has-auth-hos" class="text-xl font-bold text-emerald-600">0</p>
+          <p class="text-xs text-slate-500 font-medium">ส่ง MOPH Refer แล้ว</p>
+          <p id="kpi-has-moph" class="text-xl font-bold text-emerald-600">0</p>
         </div>
       </div>
 
-      <!-- Has Auth Code in API -->
+      <!-- No MOPH Refer -->
+      <div class="bg-white rounded-xl p-3.5 border border-slate-200 shadow-sm flex items-center space-x-3">
+        <div class="p-2.5 bg-amber-50 text-amber-600 rounded-lg">
+          <i data-lucide="clock" class="w-5 h-5"></i>
+        </div>
+        <div>
+          <p class="text-xs text-slate-500 font-medium">ยังไม่ส่ง MOPH Refer</p>
+          <p id="kpi-no-moph" class="text-xl font-bold text-amber-600">0</p>
+        </div>
+      </div>
+
+      <!-- Has Right Checked -->
       <div class="bg-white rounded-xl p-3.5 border border-slate-200 shadow-sm flex items-center space-x-3">
         <div class="p-2.5 bg-blue-50 text-blue-600 rounded-lg">
           <i data-lucide="badge-check" class="w-5 h-5"></i>
         </div>
         <div>
-          <p class="text-xs text-slate-500 font-medium">มี Authen ใน สปสช. (API)</p>
-          <p id="kpi-has-auth-api" class="text-xl font-bold text-blue-600">0</p>
-        </div>
-      </div>
-
-      <!-- No Auth Code -->
-      <div class="bg-white rounded-xl p-3.5 border border-slate-200 shadow-sm flex items-center space-x-3">
-        <div class="p-2.5 bg-amber-50 text-amber-600 rounded-lg">
-          <i data-lucide="alert-circle" class="w-5 h-5"></i>
-        </div>
-        <div>
-          <p class="text-xs text-slate-500 font-medium">ยังไม่มี Authen</p>
-          <p id="kpi-no-auth" class="text-xl font-bold text-amber-600">0</p>
+          <p class="text-xs text-slate-500 font-medium">ตรวจสิทธิ สปสช. แล้ว</p>
+          <p id="kpi-right-checked" class="text-xl font-bold text-blue-600">0</p>
         </div>
       </div>
     </div>
@@ -206,7 +207,7 @@
     <!-- Batch Progress Bar (Hidden by default) -->
     <div id="batch-progress-container" class="hidden bg-white p-4 rounded-xl border border-blue-200 shadow-sm space-y-2">
       <div class="flex justify-between text-xs text-slate-700 font-medium">
-        <span id="batch-status-text">กำลังตรวจสอบสิทธิ & Authen... (0/0)</span>
+        <span id="batch-status-text">กำลังตรวจสอบสิทธิ สปสช.... (0/0)</span>
         <button onclick="stopBatchCheck()" class="text-red-500 hover:text-red-700 text-xs font-semibold cursor-pointer">หยุดการทำงาน</button>
       </div>
       <div class="w-full bg-slate-100 rounded-full h-2.5 overflow-hidden">
@@ -222,7 +223,7 @@
           <h2 class="text-sm font-bold text-slate-800">รายการผู้ป่วยส่งต่อ Refer Out (<span id="record-count">0</span> รายการ)</h2>
         </div>
         <div class="text-xs text-slate-500">
-          * ข้อมูลเชื่อมโยงระหว่างตาราง <code class="font-mono text-slate-700 bg-slate-100 px-1 py-0.5 rounded">referout</code>, <code class="font-mono text-slate-700 bg-slate-100 px-1 py-0.5 rounded">visit_pttype</code> และ สปสช.
+          * ข้อมูลเชื่อมโยงระหว่างตาราง <code class="font-mono text-slate-700 bg-slate-100 px-1 py-0.5 rounded">referout</code>, <code class="font-mono text-slate-700 bg-slate-100 px-1 py-0.5 rounded">moph_refer</code>, <code class="font-mono text-slate-700 bg-slate-100 px-1 py-0.5 rounded">visit_pttype</code> และ สปสช.
         </div>
       </div>
 
@@ -237,15 +238,14 @@
               <th class="py-3 px-3 min-w-[190px]">สิทธิการรักษา (HOSxP)</th>
               <th class="py-3 px-3 min-w-[200px]">สิทธิการรักษา (สปสช.)</th>
               <th class="py-3 px-3 text-center min-w-[130px]">เปรียบเทียบสิทธิ</th>
-              <th class="py-3 px-3 text-center min-w-[130px]">Authen Code (HOS)</th>
-              <th class="py-3 px-3 text-center min-w-[150px]">Authen Code (API)</th>
+              <th class="py-3 px-3 text-center min-w-[130px]">MOPH Refer</th>
               <th class="py-3 px-3 min-w-[140px]">แพทย์ / แผนก / ผู้ส่ง</th>
               <th class="py-3 px-3 text-center min-w-[125px]">บันทึก HOS</th>
             </tr>
           </thead>
           <tbody id="visit-table-body" class="divide-y divide-slate-100 text-slate-700">
             <tr>
-              <td colspan="11" class="py-12 text-center text-slate-400">
+              <td colspan="10" class="py-12 text-center text-slate-400">
                 <i data-lucide="inbox" class="w-10 h-10 mx-auto mb-2 stroke-1"></i>
                 <p>เลือกวันที่ แล้วกดปุ่ม "ค้นหา"</p>
               </td>
@@ -1049,15 +1049,14 @@
     function updateKpis() {
       const total = rawVisits.length;
       const dflowSaved = rawVisits.filter(v => v.dflow_saved).length;
-      const hasAuthHos = rawVisits.filter(v => v.auth_code && v.auth_code.trim() !== '').length;
-      const hasAuthApi = rawVisits.filter(v => (v.dflow_data?.claim_code || v.auth_code_from_api)).length;
-      const noAuth = rawVisits.filter(v => !isNoAuthenExempt(v) && !v.auth_code && !(v.dflow_data?.claim_code || v.auth_code_from_api)).length;
+      const hasMoph = rawVisits.filter(v => v.moph_refer_id && String(v.moph_refer_id).trim() !== '').length;
+      const noMoph = total - hasMoph;
 
       document.getElementById('kpi-total').textContent = total.toLocaleString();
       document.getElementById('kpi-dflow-saved').textContent = dflowSaved.toLocaleString();
-      document.getElementById('kpi-has-auth-hos').textContent = hasAuthHos.toLocaleString();
-      document.getElementById('kpi-has-auth-api').textContent = hasAuthApi.toLocaleString();
-      document.getElementById('kpi-no-auth').textContent = noAuth.toLocaleString();
+      document.getElementById('kpi-has-moph').textContent = hasMoph.toLocaleString();
+      document.getElementById('kpi-no-moph').textContent = noMoph.toLocaleString();
+      document.getElementById('kpi-right-checked').textContent = dflowSaved.toLocaleString();
     }
 
     function applyClientFilter() {
@@ -1065,13 +1064,12 @@
       const search = document.getElementById('quick-search').value.toLowerCase().trim();
 
       let filtered = rawVisits.filter(v => {
-        const hasHos = Boolean(v.auth_code && v.auth_code.trim() !== '');
-        const hasApi = Boolean(v.dflow_data?.claim_code || v.auth_code_from_api);
-        const isMismatch = Boolean(hasHos && hasApi && v.auth_code.trim().toLowerCase() !== (v.dflow_data?.claim_code || v.auth_code_from_api).trim().toLowerCase());
+        const hasMoph = Boolean(v.moph_refer_id && String(v.moph_refer_id).trim() !== '');
 
-        if (filter === 'no_auth' && (hasHos || hasApi || isNoAuthenExempt(v))) return false;
-        if (filter === 'has_auth' && !hasHos && !hasApi) return false;
-        if (filter === 'mismatch' && !isMismatch) return false;
+        if (filter === 'has_moph' && !hasMoph) return false;
+        if (filter === 'no_moph' && hasMoph) return false;
+        if (filter === 'dflow_saved' && !v.dflow_saved) return false;
+        if (filter === 'not_saved' && v.dflow_saved) return false;
 
         if (search) {
           const text = `${v.hn || ''} ${v.vn || ''} ${v.cid || ''} ${v.ptname || ''} ${v.moph_refer_id || ''} ${v.doctor_name || ''}`.toLowerCase();
@@ -1090,7 +1088,7 @@
       if (visits.length === 0) {
         tbody.innerHTML = `
           <tr>
-            <td colspan="11" class="py-12 text-center text-slate-400">
+            <td colspan="10" class="py-12 text-center text-slate-400">
               <i data-lucide="folder-search" class="w-10 h-10 mx-auto mb-2 text-slate-300 stroke-1"></i>
               <p>ไม่พบรายการที่ตรงกับเงื่อนไขการค้นหา</p>
             </td>
@@ -1105,8 +1103,7 @@
           <tr class="hover:bg-slate-50/80 transition duration-150 border-b border-slate-100" id="visit-row-${v.vn}">
             <td class="py-3 px-3 text-center text-slate-400 font-mono">${idx + 1}</td>
             <td class="py-3 px-3 text-slate-600 font-mono text-[11px]">
-              <div>${v.refer_time || '-'}</div>
-              ${v.moph_refer_id ? `<div class="text-[10px] text-blue-600 mt-0.5 truncate max-w-[110px]" title="MOPH Refer: ${escapeHtml(v.moph_refer_id)}">${escapeHtml(v.moph_refer_id)}</div>` : ''}
+              <div class="font-semibold text-slate-800">${v.refer_time || '-'}</div>
             </td>
             <td class="py-3 px-3 font-mono">
               <div class="font-bold text-slate-800 text-xs">${v.vn}</div>
@@ -1128,11 +1125,8 @@
             <td class="py-3 px-3 text-center" id="right-match-cell-${v.vn}">
               ${renderRightMatchCell(v)}
             </td>
-            <td class="py-3 px-3 text-center font-mono" id="auth-hos-cell-${v.vn}">
-              ${renderAuthenHosCell(v)}
-            </td>
-            <td class="py-3 px-3 text-center" id="auth-api-cell-${v.vn}">
-              ${renderAuthenApiCell(v)}
+            <td class="py-3 px-3 text-center" id="moph-refer-cell-${v.vn}">
+              ${renderMophReferCell(v)}
             </td>
             <td class="py-3 px-3 text-slate-600">
               <div class="font-medium text-slate-800 text-[11px] truncate max-w-[130px]" title="${escapeHtml(v.doctor_name || '')}">${escapeHtml(v.doctor_name || '-')}</div>
@@ -1284,73 +1278,22 @@
       return '<span class="text-slate-400 text-xs">-</span>';
     }
 
-    function renderAuthenHosCell(visit) {
-      if (visit.auth_code && visit.auth_code.trim()) {
-        const code = visit.auth_code.trim();
+    function renderMophReferCell(visit) {
+      const mophId = visit.moph_refer_id ? String(visit.moph_refer_id).trim() : '';
+      if (mophId) {
         return `
-          <div class="inline-flex items-center space-x-1">
-            <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold bg-emerald-100 text-emerald-800 border border-emerald-300">
-              <i data-lucide="check-circle-2" class="w-3.5 h-3.5 mr-1 text-emerald-600"></i>${code}
+          <div class="inline-flex flex-col items-center">
+            <span class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-bold bg-emerald-100 text-emerald-800 border border-emerald-300 shadow-2xs" title="ส่งเข้า MOPH Refer เรียบร้อย (ID: ${escapeHtml(mophId)})">
+              <i data-lucide="check" class="w-3.5 h-3.5 mr-1 text-emerald-600 stroke-[3]"></i>ส่งแล้ว
             </span>
-            <button type="button" onclick="event.stopPropagation(); copyToClipboard('${code}')" title="คัดลอกรหัส HOSxP" class="text-slate-400 hover:text-emerald-700 p-0.5 rounded hover:bg-emerald-50 transition">
-              <i data-lucide="copy" class="w-3 h-3"></i>
-            </button>
+            <span class="font-mono text-[10px] text-blue-700 mt-1 font-semibold truncate max-w-[130px]" title="${escapeHtml(mophId)}">${escapeHtml(mophId)}</span>
           </div>
         `;
       }
-      if (isNoAuthenExempt(visit)) {
-        return `<span class="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-medium bg-slate-100 text-slate-500 border border-slate-200" title="สิทธินี้ (${visit.pttype}) ยกเว้นไม่ต้องมี Authen Code">ไม่ต้องมี Authen</span>`;
-      }
-      return `<span class="text-slate-400 text-xs italic">-</span>`;
-    }
-
-    function renderAuthenApiCell(visit) {
-      const apiAuthCode = (visit.dflow_data?.claim_code && visit.dflow_data.claim_code.trim()) || 
-                          (visit.auth_code_from_api && visit.auth_code_from_api.trim());
-      const hosAuthCode = (visit.auth_code && visit.auth_code.trim()) || '';
-      const isMismatch = Boolean(hosAuthCode && apiAuthCode && hosAuthCode.toLowerCase() !== apiAuthCode.toLowerCase());
-
-      if (apiAuthCode) {
-        return `
-          <div class="space-y-1">
-            <div class="inline-flex items-center space-x-1">
-              <button onclick="viewAuthenHistory('${visit.cid}', '${visit.ptname || ''}', '${visit.vn}')" title="คลิกดูประวัติ Authen สปสช." class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold bg-blue-100 text-blue-900 border border-blue-300 hover:bg-blue-200 transition font-mono shadow-2xs">
-                <i data-lucide="badge-check" class="w-3.5 h-3.5 mr-1 text-blue-600"></i>${apiAuthCode}
-              </button>
-              <button type="button" onclick="event.stopPropagation(); copyToClipboard('${apiAuthCode}')" title="คัดลอกรหัส API" class="text-slate-400 hover:text-blue-700 p-0.5 rounded hover:bg-blue-50 transition">
-                <i data-lucide="copy" class="w-3.5 h-3.5"></i>
-              </button>
-            </div>
-            ${isMismatch ? `<div><span class="text-xs font-semibold text-rose-700 bg-rose-50 px-2 py-0.5 rounded border border-rose-200 inline-flex items-center shadow-2xs" title="รหัส Authen สปสช. (${apiAuthCode}) ไม่ตรงกับใน HOSxP (${hosAuthCode})"><i data-lucide="alert-circle" class="w-3.5 h-3.5 mr-1 text-rose-600"></i>ไม่ตรงกับ Hosxp</span></div>` : ''}
-          </div>
-        `;
-      }
-
-      if (isNoAuthenExempt(visit)) {
-        return `
-          <span class="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-medium bg-slate-100 text-slate-500 border border-slate-200" title="สิทธินี้ (${visit.pttype}) ยกเว้นไม่ต้องมี Authen Code">
-            ไม่ต้องมี Authen
-          </span>
-        `;
-      }
-
-      if (visit.dflow_saved) {
-        return `
-          <div class="space-y-1">
-            <span class="inline-flex items-center text-xs font-semibold text-rose-700 bg-rose-50 px-2 py-0.5 rounded border border-rose-200 shadow-2xs">
-              <i data-lucide="x-circle" class="w-3.5 h-3.5 mr-1 text-rose-500"></i>ไม่พบรหัสวันนี้
-            </span>
-            <button onclick="viewAuthenHistory('${visit.cid}', '${visit.ptname || ''}', '${visit.vn}')" class="text-xs text-blue-600 hover:underline block mx-auto">
-              ดูประวัติ
-            </button>
-          </div>
-        `;
-      }
-
       return `
-        <button onclick="viewAuthenHistory('${visit.cid}', '${visit.ptname || ''}', '${visit.vn}')" title="คลิกเพื่อตรวจสอบว่ามี Authen Code สปสช. วันนี้หรือไม่" class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium bg-slate-100 hover:bg-slate-200 text-slate-600 border border-slate-300 transition">
-          <i data-lucide="search" class="w-3.5 h-3.5 mr-1 text-slate-400"></i>กดเช็ค สปสช.
-        </button>
+        <span class="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-medium bg-amber-50 text-amber-700 border border-amber-200">
+          <i data-lucide="clock" class="w-3 h-3 mr-1 text-amber-500"></i>ยังไม่ส่ง
+        </span>
       `;
     }
 
@@ -1554,15 +1497,13 @@
       const vpCell = document.getElementById(`vp-cell-${visit.vn}`);
       const nhsoCell = document.getElementById(`nhso-cell-${visit.vn}`);
       const matchCell = document.getElementById(`right-match-cell-${visit.vn}`);
-      const authHosCell = document.getElementById(`auth-hos-cell-${visit.vn}`);
-      const authApiCell = document.getElementById(`auth-api-cell-${visit.vn}`);
+      const mophCell = document.getElementById(`moph-refer-cell-${visit.vn}`);
       const actionHosCell = document.getElementById(`action-hos-cell-${visit.vn}`);
 
       if (vpCell) vpCell.innerHTML = renderVpCell(visit);
       if (nhsoCell) nhsoCell.innerHTML = renderNhsoCell(null, visit);
       if (matchCell) matchCell.innerHTML = renderRightMatchCell(visit);
-      if (authHosCell) authHosCell.innerHTML = renderAuthenHosCell(visit);
-      if (authApiCell) authApiCell.innerHTML = renderAuthenApiCell(visit);
+      if (mophCell) mophCell.innerHTML = renderMophReferCell(visit);
       if (actionHosCell) actionHosCell.innerHTML = renderHosSyncActionCell(visit);
 
       lucide.createIcons();
