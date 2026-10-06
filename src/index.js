@@ -30,6 +30,11 @@ app.use((req, res, next) => {
 // Mount Routes
 app.use('/', apiRoutes);
 
+// Page Route: Refer Out
+app.get('/referout', (req, res) => {
+  res.sendFile(path.join(__dirname, '../public/referout.html'));
+});
+
 // 404 Not Found Handler
 app.use((req, res) => {
   res.status(404).json({

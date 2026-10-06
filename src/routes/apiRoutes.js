@@ -11,6 +11,7 @@ const authController = require('../controllers/authController');
 const exemptPttypeController = require('../controllers/exemptPttypeController');
 const noAuthenExemptController = require('../controllers/noAuthenExemptController');
 const ucsSubCentersController = require('../controllers/ucsSubCentersController');
+const referOutController = require('../controllers/referOutController');
 const { authenticate, requireAdmin } = require('../middleware/authMiddleware');
 
 // 0. Authentication & User Management
@@ -87,5 +88,8 @@ router.get('/api/vn-authen/:vn', (req, res) => vnAuthenController.getByVn(req, r
 router.get('/api/hos-sync/preview/:vn', (req, res) => hosSyncController.preview(req, res));
 router.post('/api/hos-sync/preview', (req, res) => hosSyncController.preview(req, res));
 router.post('/api/hos-sync/save', (req, res) => hosSyncController.save(req, res));
+
+// 8. Refer Out List
+router.get('/api/referout', (req, res) => referOutController.getReferOutList(req, res));
 
 module.exports = router;
