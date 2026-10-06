@@ -1,4 +1,5 @@
 const { hosPool, dflowPool } = require('../config/database');
+const exemptPttypeService = require('./exemptPttypeService');
 
 /**
  * List of 11 district hospitals in Ratchaburi (Out CUP)
@@ -227,7 +228,49 @@ class HosSyncService {
       }
     } catch (e) { }
 
-    const mappedPttype = mapNhsoToHosPttype(mainInsclId, subInsclId, hospmainTarget, hospsubTarget, currentHos.pttype, dynamicSubCenters);
+    // Check if patient's current HOSxP pttype is in exempt list
+    let isExempt = false;
+    let exemptTargetPttype = null;
+    let exemptTargetPttypeName = '-';
+
+    try {
+      const exemptCodes = await exemptPttypeService.getActiveCodes();
+      const currentVpPttype = (currentHos.vp_pttype || '').trim().toUpperCase();
+      const currentOvstPttype = (currentHos.pttype || '').trim().toUpperCase();
+
+      if (currentVpPttype && exemptCodes.includes(currentVpPttype)) {
+        isExempt = true;
+        exemptTargetPttype = currentHos.vp_pttype;
+        exemptTargetPttypeName = currentHos.vp_pttypename;
+      } else if (currentOvstPttype && exemptCodes.includes(currentOvstPttype)) {
+        isExempt = true;
+        exemptTargetPttype = currentHos.pttype;
+        exemptTargetPttypeName = currentHos.pttypename;
+      }
+    } catch (e) {
+      console.warn('[HosSyncService] Failed to check exempt pttypes:', e.message);
+    }
+
+    let mappedPttype = null;
+    let targetPttypeName = '-';
+
+    if (isExempt) {
+      // สิทธิที่ยกเว้นการตรวจสอบความตรงกัน ไม่ต้องเปลี่ยน pttype ให้ใช้ pttype เดิมใน hos
+      mappedPttype = exemptTargetPttype;
+      targetPttypeName = exemptTargetPttypeName;
+      if (!targetPttypeName || targetPttypeName === '-') {
+        if (mappedPttype) {
+          const ptRows = await hosPool.query(`SELECT name FROM pttype WHERE pttype = ?`, [mappedPttype]);
+          if (Array.isArray(ptRows) && ptRows.length > 0) targetPttypeName = ptRows[0].name;
+        }
+      }
+    } else {
+      mappedPttype = mapNhsoToHosPttype(mainInsclId, subInsclId, hospmainTarget, hospsubTarget, currentHos.pttype, dynamicSubCenters);
+      if (mappedPttype) {
+        const ptRows = await hosPool.query(`SELECT name FROM pttype WHERE pttype = ?`, [mappedPttype]);
+        if (Array.isArray(ptRows) && ptRows.length > 0) targetPttypeName = ptRows[0].name;
+      }
+    }
 
     // pttypeno rule: cardId if present, else formatted cid
     let pttypenoTarget = null;
@@ -246,15 +289,6 @@ class HosSyncService {
 
     // Authen Code from authen_json or dflow claim_code
     const authCodeTarget = authenJson?.claimCode || dflowData?.claim_code || currentHos.vp_auth_code || null;
-
-    // Get pttype name for target
-    let targetPttypeName = '-';
-    if (mappedPttype) {
-      const [ptRows] = await Promise.all([
-        hosPool.query(`SELECT name FROM pttype WHERE pttype = ?`, [mappedPttype])
-      ]);
-      if (ptRows.length > 0) targetPttypeName = ptRows[0].name;
-    }
 
     return {
       vn,
@@ -285,7 +319,8 @@ class HosSyncService {
         begin_date: beginDateTarget,
         expire_date: expireDateTarget,
         auth_code: authCodeTarget,
-        claim_code: null // visit_pttype.claim_code ให้เป็นค่าว่าง
+        claim_code: null, // visit_pttype.claim_code ให้เป็นค่าว่าง
+        is_exempt: isExempt
       }
     };
   }

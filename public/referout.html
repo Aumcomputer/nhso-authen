@@ -1975,7 +1975,8 @@
                       <span class="font-bold text-indigo-700">[${escapeHtml(cur.vp_pttype || '-')}]</span> ${escapeHtml(cur.vp_pttypename || '-')}
                     </td>
                     <td class="py-2.5 px-3 font-mono font-bold text-emerald-800 bg-emerald-50/40">
-                      [${escapeHtml(tgt.pttype || '-')}] ${escapeHtml(tgt.pttypename || '-')}
+                      <div>[${escapeHtml(tgt.pttype || '-')}] ${escapeHtml(tgt.pttypename || '-')}</div>
+                      ${tgt.is_exempt ? '<div class="mt-1"><span class="px-1.5 py-0.5 bg-slate-100 text-slate-700 border border-slate-300 rounded text-[10px] font-sans font-medium">สิทธิยกเว้น (คงสิทธิเดิม)</span></div>' : ''}
                     </td>
                   </tr>
                   <tr>
