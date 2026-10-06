@@ -228,19 +228,19 @@
       </div>
 
       <div class="overflow-x-auto">
-        <table class="w-full text-left border-collapse text-xs">
+        <table class="w-full text-left border-collapse text-sm">
           <thead>
-            <tr class="bg-slate-100/75 border-b border-slate-200 text-slate-700 font-semibold uppercase tracking-wider text-[11px]">
-              <th class="py-3 px-3 w-10 text-center">#</th>
-              <th class="py-3 px-3">เวลาส่งต่อ</th>
-              <th class="py-3 px-3">VN / HN</th>
-              <th class="py-3 px-3 min-w-[170px]">ชื่อ-สกุล / เลขบัตร (CID)</th>
-              <th class="py-3 px-3 min-w-[190px]">สิทธิการรักษา (HOSxP)</th>
-              <th class="py-3 px-3 min-w-[200px]">สิทธิการรักษา (สปสช.)</th>
-              <th class="py-3 px-3 text-center min-w-[130px]">เปรียบเทียบสิทธิ</th>
-              <th class="py-3 px-3 text-center min-w-[130px]">MOPH Refer</th>
-              <th class="py-3 px-3 min-w-[140px]">แพทย์ / แผนก / ผู้ส่ง</th>
-              <th class="py-3 px-3 text-center min-w-[125px]">บันทึก HOS</th>
+            <tr class="bg-slate-100/75 border-b border-slate-200 text-slate-700 font-semibold uppercase tracking-wider text-xs">
+              <th class="py-3.5 px-3.5 w-12 text-center">#</th>
+              <th class="py-3.5 px-3.5">เวลาส่งต่อ</th>
+              <th class="py-3.5 px-3.5">VN / HN</th>
+              <th class="py-3.5 px-3.5 min-w-[180px]">ชื่อ-สกุล / เลขบัตร (CID)</th>
+              <th class="py-3.5 px-3.5 min-w-[200px]">สิทธิการรักษา (HOSxP)</th>
+              <th class="py-3.5 px-3.5 min-w-[210px]">สิทธิการรักษา (สปสช.)</th>
+              <th class="py-3.5 px-3.5 text-center min-w-[135px]">เปรียบเทียบสิทธิ</th>
+              <th class="py-3.5 px-3.5 text-center min-w-[135px]">MOPH Refer</th>
+              <th class="py-3.5 px-3.5 min-w-[150px]">แพทย์ / แผนก / ผู้ส่ง</th>
+              <th class="py-3.5 px-3.5 text-center min-w-[130px]">บันทึก HOS</th>
             </tr>
           </thead>
           <tbody id="visit-table-body" class="divide-y divide-slate-100 text-slate-700">
@@ -1101,39 +1101,39 @@
       tbody.innerHTML = visits.map((v, idx) => {
         return `
           <tr class="hover:bg-slate-50/80 transition duration-150 border-b border-slate-100" id="visit-row-${v.vn}">
-            <td class="py-3 px-3 text-center text-slate-400 font-mono">${idx + 1}</td>
-            <td class="py-3 px-3 text-slate-600 font-mono text-[11px]">
-              <div class="font-semibold text-slate-800">${v.refer_time || '-'}</div>
+            <td class="py-3.5 px-3.5 text-center text-slate-500 font-mono text-sm">${idx + 1}</td>
+            <td class="py-3.5 px-3.5 text-slate-600 font-mono text-xs">
+              <div class="font-bold text-slate-800 text-sm">${v.refer_time || '-'}</div>
             </td>
-            <td class="py-3 px-3 font-mono">
-              <div class="font-bold text-slate-800 text-xs">${v.vn}</div>
-              <div class="text-slate-400 text-[11px]">HN: ${v.hn}</div>
+            <td class="py-3.5 px-3.5 font-mono">
+              <div class="font-bold text-slate-900 text-sm">${v.vn}</div>
+              <div class="text-slate-500 text-xs">HN: ${v.hn}</div>
             </td>
-            <td class="py-3 px-3">
-              <div class="font-medium text-slate-900">${escapeHtml(v.ptname || '-')}</div>
-              <div class="font-mono text-slate-500 text-[11px] flex items-center space-x-1 mt-0.5">
+            <td class="py-3.5 px-3.5">
+              <div class="font-semibold text-slate-900 text-sm">${escapeHtml(v.ptname || '-')}</div>
+              <div class="font-mono text-slate-500 text-xs flex items-center space-x-1 mt-0.5">
                 <span>${formatCid(v.cid) || '-'}</span>
-                ${v.cid ? `<button type="button" onclick="event.stopPropagation(); copyToClipboard('${v.cid}')" title="คัดลอก CID" class="text-slate-400 hover:text-slate-700 p-0.5 rounded hover:bg-slate-200 transition"><i data-lucide="copy" class="w-3 h-3"></i></button>` : ''}
+                ${v.cid ? `<button type="button" onclick="event.stopPropagation(); copyToClipboard('${v.cid}')" title="คัดลอก CID" class="text-slate-400 hover:text-slate-700 p-0.5 rounded hover:bg-slate-200 transition"><i data-lucide="copy" class="w-3.5 h-3.5"></i></button>` : ''}
               </div>
             </td>
-            <td class="py-3 px-3" id="vp-cell-${v.vn}">
+            <td class="py-3.5 px-3.5" id="vp-cell-${v.vn}">
               ${renderVpCell(v)}
             </td>
-            <td class="py-3 px-3" id="nhso-cell-${v.vn}">
+            <td class="py-3.5 px-3.5" id="nhso-cell-${v.vn}">
               ${renderNhsoCell(null, v)}
             </td>
-            <td class="py-3 px-3 text-center" id="right-match-cell-${v.vn}">
+            <td class="py-3.5 px-3.5 text-center" id="right-match-cell-${v.vn}">
               ${renderRightMatchCell(v)}
             </td>
-            <td class="py-3 px-3 text-center" id="moph-refer-cell-${v.vn}">
+            <td class="py-3.5 px-3.5 text-center" id="moph-refer-cell-${v.vn}">
               ${renderMophReferCell(v)}
             </td>
-            <td class="py-3 px-3 text-slate-600">
-              <div class="font-medium text-slate-800 text-[11px] truncate max-w-[130px]" title="${escapeHtml(v.doctor_name || '')}">${escapeHtml(v.doctor_name || '-')}</div>
-              <div class="text-[10px] text-slate-500 mt-0.5">${escapeHtml(v.spclty_name || '-')}</div>
-              ${v.refer_staff_name ? `<div class="text-[10px] text-slate-400 truncate max-w-[130px]" title="ผู้บันทึก: ${escapeHtml(v.refer_staff_name)}">(${escapeHtml(v.refer_staff_name)})</div>` : ''}
+            <td class="py-3.5 px-3.5 text-slate-600">
+              <div class="font-semibold text-slate-800 text-xs truncate max-w-[150px]" title="${escapeHtml(v.doctor_name || '')}">${escapeHtml(v.doctor_name || '-')}</div>
+              <div class="text-xs text-slate-500 mt-0.5">${escapeHtml(v.spclty_name || '-')}</div>
+              ${v.refer_staff_name ? `<div class="text-xs text-slate-400 truncate max-w-[150px]" title="ผู้บันทึก: ${escapeHtml(v.refer_staff_name)}">(${escapeHtml(v.refer_staff_name)})</div>` : ''}
             </td>
-            <td class="py-3 px-3 text-center" id="action-hos-cell-${v.vn}">
+            <td class="py-3.5 px-3.5 text-center" id="action-hos-cell-${v.vn}">
               ${renderHosSyncActionCell(v)}
             </td>
           </tr>
@@ -1200,13 +1200,13 @@
       if (!pttype && !pttypename) return '<span class="text-slate-400 italic text-xs">-</span>';
 
       return `
-        <div class="space-y-0.5 text-xs">
+        <div class="space-y-0.5">
           <div class="flex items-center space-x-1.5 flex-wrap">
-            <span class="font-mono font-bold text-indigo-700 bg-indigo-50 border border-indigo-200 px-1.5 py-0.2 rounded text-[11px]">${pttype}</span>
-            <span class="font-medium text-slate-800 text-[11px]">${escapeHtml(pttypename)}</span>
+            <span class="font-mono font-bold text-indigo-700 bg-indigo-50 border border-indigo-200 px-2 py-0.5 rounded text-xs">${pttype}</span>
+            <span class="font-semibold text-slate-800 text-xs">${escapeHtml(pttypename)}</span>
           </div>
           ${(hospmain || hospsub) ? `
-            <div class="text-[10px] text-slate-500 font-mono">
+            <div class="text-[11px] text-slate-500 font-mono mt-0.5">
               รพ.หลัก: ${hospmain || '-'} | รพ.รอง: ${hospsub || '-'}
             </div>
           ` : ''}
@@ -1224,15 +1224,15 @@
         const hospmainName = d.hospmain_name || '-';
 
         return `
-          <div class="space-y-0.5 text-xs">
+          <div class="space-y-0.5">
             <div class="flex items-center space-x-1 flex-wrap">
-              <span class="font-mono font-bold text-blue-700 bg-blue-50 border border-blue-200 px-1.5 py-0.2 rounded text-[11px]">${main}/${sub}</span>
-              <span class="font-medium text-slate-800 text-[11px]">${escapeHtml(mainName)}</span>
-              ${subName ? `<span class="text-slate-500 text-[10px]">(${escapeHtml(subName)})</span>` : ''}
+              <span class="font-mono font-bold text-blue-700 bg-blue-50 border border-blue-200 px-2 py-0.5 rounded text-xs">${main}/${sub}</span>
+              <span class="font-semibold text-slate-800 text-xs">${escapeHtml(mainName)}</span>
+              ${subName ? `<span class="text-slate-500 text-[11px]">(${escapeHtml(subName)})</span>` : ''}
             </div>
-            <div class="text-[10px] text-slate-500 flex items-center space-x-1">
-              <i data-lucide="building-2" class="w-3 h-3 text-slate-400"></i>
-              <span class="truncate max-w-[170px]" title="${escapeHtml(hospmainName)}">${escapeHtml(hospmainName)}</span>
+            <div class="text-[11px] text-slate-500 flex items-center space-x-1 mt-0.5">
+              <i data-lucide="building-2" class="w-3.5 h-3.5 text-slate-400"></i>
+              <span class="truncate max-w-[180px]" title="${escapeHtml(hospmainName)}">${escapeHtml(hospmainName)}</span>
             </div>
           </div>
         `;
@@ -1240,8 +1240,8 @@
 
       if (visit && !visit.dflow_saved) {
         return `
-          <button onclick="checkAndSaveSingle('${visit.vn}', '${visit.cid}')" title="ตรวจสอบสิทธิ์จาก สปสช. และบันทึกลงฐานข้อมูล d-flow" class="inline-flex items-center px-2 py-1 rounded-md text-xs font-semibold bg-blue-50 text-blue-700 border border-blue-200 hover:bg-blue-100 transition shadow-2xs cursor-pointer">
-            <i data-lucide="refresh-cw" class="w-3 h-3 mr-1 text-blue-600"></i>กดเช็ค สปสช.
+          <button onclick="checkAndSaveSingle('${visit.vn}', '${visit.cid}')" title="ตรวจสอบสิทธิ์จาก สปสช. และบันทึกลงฐานข้อมูล d-flow" class="inline-flex items-center px-2.5 py-1.5 rounded-md text-xs font-semibold bg-blue-50 text-blue-700 border border-blue-200 hover:bg-blue-100 transition shadow-2xs cursor-pointer">
+            <i data-lucide="refresh-cw" class="w-3.5 h-3.5 mr-1 text-blue-600"></i>กดเช็ค สปสช.
           </button>
         `;
       }
@@ -1256,21 +1256,21 @@
       const match = checkRightMatch(visit);
       if (match.isExempt) {
         return `
-          <button onclick="viewRightDbDetail('${visit.vn}')" title="สิทธินี้ (${visit.pttype}) ยกเว้นไม่ต้องเทียบความตรงกัน" class="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-medium bg-slate-100 text-slate-600 border border-slate-200 hover:bg-slate-200 transition">
-            <i data-lucide="minus" class="w-3 h-3 mr-1 text-slate-400"></i>ไม่เทียบสิทธิ
+          <button onclick="viewRightDbDetail('${visit.vn}')" title="สิทธินี้ (${visit.pttype}) ยกเว้นไม่ต้องเทียบความตรงกัน" class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium bg-slate-100 text-slate-600 border border-slate-200 hover:bg-slate-200 transition">
+            <i data-lucide="minus" class="w-3.5 h-3.5 mr-1 text-slate-400"></i>ไม่เทียบสิทธิ
           </button>
         `;
       }
       if (match.isMatch) {
         return `
-          <button onclick="viewRightDbDetail('${visit.vn}')" title="สิทธิ์ใน HOSxP ตรงกับ สปสช. (คลิกเพื่อดูรายละเอียด)" class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold bg-emerald-100 text-emerald-800 border border-emerald-300 hover:bg-emerald-200 transition shadow-2xs">
+          <button onclick="viewRightDbDetail('${visit.vn}')" title="สิทธิ์ใน HOSxP ตรงกับ สปสช. (คลิกเพื่อดูรายละเอียด)" class="inline-flex items-center px-3 py-1 rounded-full text-xs font-bold bg-emerald-100 text-emerald-800 border border-emerald-300 hover:bg-emerald-200 transition shadow-2xs">
             <i data-lucide="check" class="w-3.5 h-3.5 mr-1 text-emerald-600 stroke-[3]"></i>✓ ตรงกัน
           </button>
         `;
       }
       if (match.checked) {
         return `
-          <button onclick="viewRightDbDetail('${visit.vn}')" title="สิทธิ์ไม่ตรงกัน! API แนะนำ: ${match.expectedLabel} (คลิกดูรายละเอียด)" class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold bg-rose-100 text-rose-800 border border-rose-300 hover:bg-rose-200 transition shadow-2xs">
+          <button onclick="viewRightDbDetail('${visit.vn}')" title="สิทธิ์ไม่ตรงกัน! API แนะนำ: ${match.expectedLabel} (คลิกดูรายละเอียด)" class="inline-flex items-center px-3 py-1 rounded-full text-xs font-bold bg-rose-100 text-rose-800 border border-rose-300 hover:bg-rose-200 transition shadow-2xs">
             <i data-lucide="x" class="w-3.5 h-3.5 mr-1 text-rose-600 stroke-[3]"></i>ไม่ตรง (${match.expectedPttypes[0] || '?'})
           </button>
         `;
@@ -1283,16 +1283,16 @@
       if (mophId) {
         return `
           <div class="inline-flex flex-col items-center">
-            <span class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-bold bg-emerald-100 text-emerald-800 border border-emerald-300 shadow-2xs" title="ส่งเข้า MOPH Refer เรียบร้อย (ID: ${escapeHtml(mophId)})">
+            <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-bold bg-emerald-100 text-emerald-800 border border-emerald-300 shadow-2xs" title="ส่งเข้า MOPH Refer เรียบร้อย (ID: ${escapeHtml(mophId)})">
               <i data-lucide="check" class="w-3.5 h-3.5 mr-1 text-emerald-600 stroke-[3]"></i>ส่งแล้ว
             </span>
-            <span class="font-mono text-[10px] text-blue-700 mt-1 font-semibold truncate max-w-[130px]" title="${escapeHtml(mophId)}">${escapeHtml(mophId)}</span>
+            <span class="font-mono text-[11px] text-blue-700 mt-1 font-semibold truncate max-w-[140px]" title="${escapeHtml(mophId)}">${escapeHtml(mophId)}</span>
           </div>
         `;
       }
       return `
-        <span class="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-medium bg-amber-50 text-amber-700 border border-amber-200">
-          <i data-lucide="clock" class="w-3 h-3 mr-1 text-amber-500"></i>ยังไม่ส่ง
+        <span class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium bg-amber-50 text-amber-700 border border-amber-200">
+          <i data-lucide="clock" class="w-3.5 h-3.5 mr-1 text-amber-500"></i>ยังไม่ส่ง
         </span>
       `;
     }
