@@ -276,17 +276,16 @@
                   <div class="text-[10px] text-slate-400 font-mono font-normal">pttype, no, hospmain, sub</div>
                 </div>
               </th>
-              <!-- Column visit_pttype: pttype, pttypeno, hospmain, hospsub -->
-              <th class="py-3 px-3 min-w-[210px]">
+              <!-- Column visit_pttype: pttype, pttypeno, hospmain, hospsub, authen -->
+              <th class="py-3 px-3 min-w-[220px]">
                 <div class="space-y-0.5">
                   <div class="font-bold text-indigo-900 flex items-center space-x-1">
                     <span class="px-1.5 py-0.5 rounded bg-indigo-100 text-indigo-800 text-[10px] font-mono font-semibold">visit_pttype</span>
-                    <span>สิทธิการรักษา</span>
+                    <span>สิทธิการรักษา & Authen</span>
                   </div>
-                  <div class="text-[10px] text-indigo-400 font-mono font-normal">pttype, no, hospmain, sub</div>
+                  <div class="text-[10px] text-indigo-400 font-mono font-normal">pttype, no, hosp, authen (HOS)</div>
                 </div>
               </th>
-              <th class="py-3 px-3 min-w-[130px] text-center">Authen Code (HOS)</th>
               <th class="py-3 px-3 min-w-[220px]">
                 <div class="flex items-center space-x-1 cursor-help" title="คลิกที่ข้อมูลในคอลัมน์นี้เพื่อดูรายละเอียดสิทธิ์การรักษาที่บันทึกใน DB">
                   <span>สิทธิ สปสช. (API)</span>
@@ -306,7 +305,7 @@
           </thead>
           <tbody id="visit-table-body" class="divide-y divide-slate-100 text-slate-700">
             <tr>
-              <td colspan="11" class="py-12 text-center text-slate-400">
+              <td colspan="10" class="py-12 text-center text-slate-400">
                 <i data-lucide="inbox" class="w-10 h-10 mx-auto mb-2 stroke-1"></i>
                 <p>เลือกวันที่และแผนก แล้วกดปุ่ม "ค้นหาข้อมูล"</p>
               </td>
@@ -578,7 +577,7 @@
       const tbody = document.getElementById('visit-table-body');
       tbody.innerHTML = `
         <tr>
-          <td colspan="11" class="py-12 text-center text-slate-400">
+          <td colspan="10" class="py-12 text-center text-slate-400">
             <i data-lucide="loader-2" class="w-8 h-8 mx-auto animate-spin mb-2 text-emerald-600"></i>
             <p>กำลังดึงข้อมูลผู้รับบริการจาก HOSxP...</p>
           </td>
@@ -601,7 +600,7 @@
           updatePttypeDropdown();
           tbody.innerHTML = `
             <tr>
-              <td colspan="11" class="py-8 text-center text-red-500">
+              <td colspan="10" class="py-8 text-center text-red-500">
                 ไม่สามารถดึงข้อมูลได้: ${res.message || 'เกิดข้อผิดพลาด'}
               </td>
             </tr>
@@ -610,7 +609,7 @@
       } catch (err) {
         tbody.innerHTML = `
           <tr>
-            <td colspan="11" class="py-8 text-center text-red-500">
+            <td colspan="10" class="py-8 text-center text-red-500">
               เกิดข้อผิดพลาดในการเชื่อมต่อเซิร์ฟเวอร์: ${err.message}
             </td>
           </tr>
@@ -1164,7 +1163,7 @@
       if (visits.length === 0) {
         tbody.innerHTML = `
           <tr>
-            <td colspan="11" class="py-12 text-center text-slate-400">
+            <td colspan="10" class="py-12 text-center text-slate-400">
               <i data-lucide="search-x" class="w-8 h-8 mx-auto mb-2 text-slate-300"></i>
               <p>ไม่พบข้อมูลผู้รับบริการตามเงื่อนไขที่เลือก</p>
             </td>
@@ -1214,7 +1213,7 @@
               </div>
             </td>
 
-            <!-- visit_pttype : pttype, pttypeno, hospmain, hospsub -->
+            <!-- visit_pttype : pttype, pttypeno, hospmain, hospsub, authen_code (HOS) -->
             <td class="py-3 px-3">
               ${v.vp_pttype ? `
                 <div class="font-medium text-indigo-950 text-sm flex items-center space-x-1">
@@ -1230,12 +1229,13 @@
                   <span>รอง: <b class="text-indigo-900 font-semibold">${v.vp_hospsub || '-'}</b></span>
                 </div>
               ` : `
-                <span class="text-slate-400 text-xs italic font-mono">- ไม่มีใน visit_pttype -</span>
+                <div class="text-slate-400 text-xs italic font-mono">- ไม่มีใน visit_pttype -</div>
               `}
-            </td>
-            <!-- Authen Code (HOS) Column -->
-            <td class="py-3 px-3 text-center" id="auth-hos-cell-${v.vn}">
-              ${renderAuthenHosCell(v)}
+              <!-- Authen Code (HOS) รวมใน visit_pttype -->
+              <div class="mt-1.5 pt-1.5 border-t border-slate-100 flex items-center space-x-1.5 text-xs" id="auth-hos-cell-${v.vn}">
+                <span class="text-[10px] text-slate-400 font-semibold">Authen:</span>
+                ${renderAuthenHosCell(v)}
+              </div>
             </td>
             <!-- NHSO Right Column -->
             <td class="py-3 px-3" id="nhso-cell-${v.vn}">
