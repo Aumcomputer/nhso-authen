@@ -14,7 +14,7 @@ class ReferOutController {
             r.vn, 
             r.hn,
             CONCAT(COALESCE(p.pname, ''), COALESCE(p.fname, ''), ' ', COALESCE(p.lname, '')) AS ptname,  
-            r.refer_date, 
+            DATE_FORMAT(r.refer_date, '%Y-%m-%d') AS refer_date, 
             r.refer_time,
             d.name AS doctor_name,  
             r.pttype,
@@ -29,7 +29,7 @@ class ReferOutController {
             sp.name AS spclty_name, 
             o2.name AS refer_staff_name,
             mr.moph_refer_id,
-            o.vstdate
+            DATE_FORMAT(o.vstdate, '%Y-%m-%d') AS vstdate
         FROM referout r 
         LEFT JOIN moph_refer mr ON r.referout_id = mr.referout_id 
         LEFT JOIN doctor d ON d.code = r.doctor 

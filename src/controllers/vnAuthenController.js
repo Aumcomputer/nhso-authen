@@ -20,7 +20,20 @@ class VnAuthenController {
         });
       }
 
-      const targetDate = vstdate || new Date().toISOString().slice(0, 10);
+      // Normalize vstdate into YYYY-MM-DD
+      let targetDate = new Date().toISOString().slice(0, 10);
+      if (vstdate) {
+        const str = String(vstdate).trim();
+        const match = str.match(/^(\d{4}-\d{2}-\d{2})/);
+        if (match) {
+          targetDate = match[1];
+        } else {
+          const d = new Date(str);
+          if (!isNaN(d.getTime())) {
+            targetDate = d.toISOString().slice(0, 10);
+          }
+        }
+      }
 
       // Check if already exists in vn_nhso_authen
       if (!force) {

@@ -109,10 +109,28 @@ class NhsoClient {
       throw new Error('pid is required for getAuthenReport');
     }
 
+    // Helper to normalize any date input (string, Date, ISO string) into YYYY-MM-DD
+    const formatDateParam = (val) => {
+      if (!val) return null;
+      if (typeof val === 'string') {
+        const trimmed = val.trim();
+        // If YYYY-MM-DD format (either exact or start of string)
+        const match = trimmed.match(/^(\d{4}-\d{2}-\d{2})/);
+        if (match) return match[1];
+        const parsed = new Date(trimmed);
+        if (!isNaN(parsed.getTime())) {
+          return parsed.toISOString().slice(0, 10);
+        }
+      } else if (val instanceof Date && !isNaN(val.getTime())) {
+        return val.toISOString().slice(0, 10);
+      }
+      return null;
+    };
+
     // Default dates: if fromDate not specified, default to single date (toDate)
     const today = new Date().toISOString().slice(0, 10);
-    const toDate = claimDateTo || claimDateFrom || today;
-    let fromDate = claimDateFrom || toDate;
+    const toDate = formatDateParam(claimDateTo) || formatDateParam(claimDateFrom) || today;
+    let fromDate = formatDateParam(claimDateFrom) || toDate;
 
     // Ensure span does not exceed 14 days
     const dFrom = new Date(fromDate);
