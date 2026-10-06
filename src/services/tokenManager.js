@@ -136,8 +136,66 @@ class TokenManager {
           refreshedAt: this.lastRefreshedAt
         };
       } catch (err) {
-        console.error('[TokenManager] ❌ Failed to refresh token:', err.response?.data || err.message);
-        const error = new Error(`Token refresh failed: ${err.response?.data || err.message}`);
+        console.warn('[TokenManager] ⚠️ Failed to refresh token with primary refresh_token:', err.response?.data || err.message);
+
+        // Fallback: Check if there's an active token reported by client agents in the database
+        try {
+          const clientTokenService = require('./clientTokenService');
+          const best = await clientTokenService.getBestActiveToken();
+          if (best && best.refresh_token && best.refresh_token.trim() !== this.refreshToken.trim()) {
+            console.log(`[TokenManager] 🔄 Attempting fallback using client token from ${best.officer_name || best.username || best.client_ip}...`);
+            this.refreshToken = best.refresh_token.trim();
+            this.persistTokensToEnv('', this.refreshToken);
+
+            // Retry refresh with best token
+            const fallbackParams = new URLSearchParams();
+            fallbackParams.append('refresh_token', this.refreshToken);
+
+            const fallbackRes = await axios.post(config.tokenUrl, fallbackParams.toString(), {
+              headers: {
+                'Content-Type': 'application/x-www-form-urlencoded',
+                'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
+              },
+              timeout: 15000
+            });
+
+            const fbText = fallbackRes.data;
+            if (typeof fbText === 'string') {
+              const fbLines = fbText.split(/\r?\n/);
+              let fbAccess = '';
+              let fbRefresh = '';
+              for (const line of fbLines) {
+                const tr = line.trim();
+                if (tr.startsWith('access-token=')) {
+                  fbAccess = tr.substring('access-token='.length).trim();
+                } else if (tr.startsWith('refresh-token=')) {
+                  fbRefresh = tr.substring('refresh-token='.length).trim();
+                }
+              }
+
+              if (fbAccess) {
+                this.accessToken = fbAccess;
+                if (fbRefresh) this.refreshToken = fbRefresh;
+                this.lastRefreshedAt = new Date();
+                console.log('[TokenManager] 🎉 Fallback token refresh succeeded!');
+                this.persistTokensToEnv(this.accessToken, this.refreshToken);
+                return {
+                  accessToken: this.accessToken,
+                  refreshToken: this.refreshToken,
+                  refreshedAt: this.lastRefreshedAt
+                };
+              }
+            }
+          }
+        } catch (fallbackErr) {
+          console.error('[TokenManager] ❌ Fallback token refresh also failed:', fallbackErr.message);
+        }
+
+        const errorMsg = typeof err.response?.data === 'object' 
+          ? JSON.stringify(err.response?.data) 
+          : (err.response?.data || err.message);
+        console.error('[TokenManager] ❌ Failed to refresh token:', errorMsg);
+        const error = new Error(`Token refresh failed: ${errorMsg}`);
         error.status = err.response?.status || 500;
         throw error;
       } finally {
