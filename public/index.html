@@ -1066,13 +1066,13 @@
         }
       }
       // 5. สิทธิประกันสังคม (SSS / SSI)
-      else if (main === 'SSS' || main === 'SSI') {
+      else if (main === 'SSS' || main === 'SSI' || main === '34' || sub === '34') {
         if (sub === 'S6') {
           expectedPttypes = ['33'];
           expectedLabel = '33 (ประกันสังคมทุพพลภาพ)';
-        } else if (isOwnHosp) {
-          expectedPttypes = ['34'];
-          expectedLabel = '34 (ประกันสังคม รพ.ราชบุรี)';
+        } else if (isOwnHosp || main === '34' || sub === '34') {
+          expectedPttypes = ['34', '35'];
+          expectedLabel = '34, 35 (ประกันสังคม รพ.ราชบุรี/จนท.)';
         } else {
           expectedPttypes = ['36'];
           expectedLabel = '36 (ประกันสังคม นอกเขต)';
@@ -1093,12 +1093,14 @@
         expectedLabel = '10 (ชำระเงินเอง)';
       }
 
+      const vpHosPttype = (visit.vp_pttype || '').trim();
+
       // กรณีอุบัติเหตุ พรบ. 13
-      if (hosPttype === '13') {
+      if (hosPttype === '13' || vpHosPttype === '13') {
         expectedPttypes.push('13');
       }
 
-      const isMatch = expectedPttypes.includes(hosPttype);
+      const isMatch = Boolean(expectedPttypes.includes(hosPttype) || (vpHosPttype && expectedPttypes.includes(vpHosPttype)));
 
       return {
         checked: true,
