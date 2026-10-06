@@ -247,11 +247,13 @@
           <span id="table-count-badge" class="px-2 py-0.5 bg-slate-100 text-slate-700 rounded-full text-xs font-semibold">0 รายการ</span>
         </div>
 
-        <!-- Filter tabs: All, Unsaved, No Auth -->
+        <!-- Filter tabs: All, Unsaved, No Auth, Match, Mismatch -->
         <div class="flex items-center space-x-1 bg-slate-100 p-1 rounded-lg text-xs font-medium">
-          <button onclick="setAuthFilter('all')" id="tab-all" class="px-3 py-1 rounded-md bg-white text-slate-800 shadow-sm transition">ทั้งหมด</button>
+          <button onclick="setAuthFilter('all')" id="tab-all" class="px-3 py-1 rounded-md bg-white text-slate-800 shadow-sm transition font-semibold">ทั้งหมด</button>
           <button onclick="setAuthFilter('unsaved_dflow')" id="tab-unsaved-dflow" class="px-3 py-1 rounded-md text-slate-600 hover:text-slate-800 transition">ยังไม่ได้ตรวจสอบ</button>
           <button onclick="setAuthFilter('no_auth')" id="tab-no-auth" class="px-3 py-1 rounded-md text-slate-600 hover:text-slate-800 transition">ยังไม่มี Authen</button>
+          <button onclick="setAuthFilter('right_match')" id="tab-right-match" class="px-3 py-1 rounded-md text-slate-600 hover:text-emerald-700 transition flex items-center space-x-1"><i data-lucide="check" class="w-3.5 h-3.5 text-emerald-600"></i><span>สิทธิตรงกัน</span></button>
+          <button onclick="setAuthFilter('right_mismatch')" id="tab-right-mismatch" class="px-3 py-1 rounded-md text-slate-600 hover:text-rose-700 transition flex items-center space-x-1"><i data-lucide="x" class="w-3.5 h-3.5 text-rose-600"></i><span>สิทธิไม่ตรง</span></button>
         </div>
       </div>
 
@@ -269,8 +271,15 @@
               <th class="py-3 px-3 min-w-[130px] text-center">Authen Code (HOS)</th>
               <th class="py-3 px-3 min-w-[220px]">
                 <div class="flex items-center space-x-1 cursor-help" title="คลิกที่ข้อมูลในคอลัมน์นี้เพื่อดูรายละเอียดสิทธิ์การรักษาที่บันทึกใน DB">
-                  <span>ตรวจสอบสิทธิ์ สปสช. (API)</span>
+                  <span>สิทธิ สปสช. (API)</span>
                   <i data-lucide="info" class="w-3.5 h-3.5 text-blue-500"></i>
+                </div>
+              </th>
+              <!-- Column ตรวจสอบสิทธิ์ API: แสดงเครื่องหมายถูก ✓ ถ้าตรงกับสิทธิ์ใน HOSxP -->
+              <th class="py-3 px-3 text-center min-w-[140px]">
+                <div class="flex items-center justify-center space-x-1 cursor-help" title="ตรวจสอบสิทธิ์ที่ได้จาก API สปสช. เปรียบเทียบกับสิทธิ์ใน HOSxP (ถ้าตรงกันแสดงเครื่องหมายถูก ✓)">
+                  <span>ตรวจสอบสิทธิ์ API</span>
+                  <i data-lucide="shield-check" class="w-3.5 h-3.5 text-emerald-600"></i>
                 </div>
               </th>
               <th class="py-3 px-3 text-center min-w-[150px]">Authen Code (API)</th>
@@ -279,7 +288,7 @@
           </thead>
           <tbody id="visit-table-body" class="divide-y divide-slate-100 text-slate-700">
             <tr>
-              <td colspan="10" class="py-12 text-center text-slate-400">
+              <td colspan="11" class="py-12 text-center text-slate-400">
                 <i data-lucide="inbox" class="w-10 h-10 mx-auto mb-2 stroke-1"></i>
                 <p>เลือกวันที่และแผนก แล้วกดปุ่ม "ค้นหาข้อมูล"</p>
               </td>
@@ -551,7 +560,7 @@
       const tbody = document.getElementById('visit-table-body');
       tbody.innerHTML = `
         <tr>
-          <td colspan="10" class="py-12 text-center text-slate-400">
+          <td colspan="11" class="py-12 text-center text-slate-400">
             <i data-lucide="loader-2" class="w-8 h-8 mx-auto animate-spin mb-2 text-emerald-600"></i>
             <p>กำลังดึงข้อมูลผู้รับบริการจาก HOSxP...</p>
           </td>
@@ -574,7 +583,7 @@
           updatePttypeDropdown();
           tbody.innerHTML = `
             <tr>
-              <td colspan="10" class="py-8 text-center text-red-500">
+              <td colspan="11" class="py-8 text-center text-red-500">
                 ไม่สามารถดึงข้อมูลได้: ${res.message || 'เกิดข้อผิดพลาด'}
               </td>
             </tr>
@@ -583,7 +592,7 @@
       } catch (err) {
         tbody.innerHTML = `
           <tr>
-            <td colspan="10" class="py-8 text-center text-red-500">
+            <td colspan="11" class="py-8 text-center text-red-500">
               เกิดข้อผิดพลาดในการเชื่อมต่อเซิร์ฟเวอร์: ${err.message}
             </td>
           </tr>
@@ -768,21 +777,23 @@
     // Filter tab handler
     function setAuthFilter(filter) {
       currentAuthFilter = filter;
-      ['tab-all', 'tab-unsaved-dflow', 'tab-no-auth'].forEach(id => {
+      ['tab-all', 'tab-unsaved-dflow', 'tab-no-auth', 'tab-right-match', 'tab-right-mismatch'].forEach(id => {
         const el = document.getElementById(id);
-        if (el) el.className = 'px-3 py-1 rounded-md text-slate-600 hover:text-slate-800 transition';
+        if (el) el.className = 'px-3 py-1 rounded-md text-slate-600 hover:text-slate-800 transition flex items-center space-x-1';
       });
 
       const activeTabMap = {
         'all': 'tab-all',
         'unsaved_dflow': 'tab-unsaved-dflow',
-        'no_auth': 'tab-no-auth'
+        'no_auth': 'tab-no-auth',
+        'right_match': 'tab-right-match',
+        'right_mismatch': 'tab-right-mismatch'
       };
 
       const activeId = activeTabMap[filter] || 'tab-all';
       const activeEl = document.getElementById(activeId);
       if (activeEl) {
-        activeEl.className = 'px-3 py-1 rounded-md bg-white text-slate-800 shadow-sm transition font-semibold';
+        activeEl.className = 'px-3 py-1 rounded-md bg-white text-slate-800 shadow-sm transition font-semibold flex items-center space-x-1';
       }
 
       applyClientFilter();
@@ -807,6 +818,14 @@
         // Tab filters
         if (currentAuthFilter === 'unsaved_dflow' && v.dflow_saved) return false;
         if (currentAuthFilter === 'no_auth' && (hasHosAuth || hasApiAuth)) return false;
+        if (currentAuthFilter === 'right_match') {
+          const match = checkRightMatch(v);
+          if (!match.checked || !match.isMatch) return false;
+        }
+        if (currentAuthFilter === 'right_mismatch') {
+          const match = checkRightMatch(v);
+          if (!match.checked || match.isMatch) return false;
+        }
 
         // Search text
         if (search) {
@@ -885,6 +904,236 @@
       `;
     }
 
+    /**
+     * รายชื่อรหัสสถานพยาบาลหลักประจำอำเภอ นอก CUP ในจังหวัดราชบุรี (chwpart = '70')
+     */
+    const RBR_OUT_CUP_MAIN_HOSPITALS = [
+      '11276', // โรงพยาบาลปากท่อ
+      '11458', // โรงพยาบาลสมเด็จพระยุพราชจอมบึง
+      '11273', // โรงพยาบาลสวนผึ้ง
+      '10730', // โรงพยาบาลโพธาราม
+      '10728', // โรงพยาบาลดำเนินสะดวก
+      '28858', // โรงพยาบาลบ้านคา
+      '10729', // โรงพยาบาลบ้านโป่ง
+      '11277', // โรงพยาบาลวัดเพลง
+      '11274', // โรงพยาบาลบางแพ
+      '11275', // โรงพยาบาลเจ็ดเสมียน
+      '11519'  // โรงพยาบาลค่ายภาณุรังษี
+    ];
+
+    /**
+     * รหัสกลุ่ม รพ.สต. และศูนย์สุขภาพชุมชนในสังกัดอำเภอต่างๆ ของ จ.ราชบุรี
+     */
+    const RBR_SUB_CENTER_PREFIXES = ['078', '079', '142', '143', '238', '240', '999'];
+
+    /**
+     * ตรวจสอบว่า hospmain เป็นสถานพยาบาลในจังหวัดราชบุรี (นอก CUP รพ.ราชบุรี) หรือไม่
+     */
+    function isRbrOutCup(hospmain) {
+      if (!hospmain) return false;
+      const hcode = String(hospmain).trim();
+      return RBR_OUT_CUP_MAIN_HOSPITALS.includes(hcode) ||
+             RBR_SUB_CENTER_PREFIXES.some(prefix => hcode.startsWith(prefix));
+    }
+
+    /**
+     * ดึงข้อมูลสิทธิ์ API จาก visit (ทั้งจาก dflow_data ใน DB และ nhsoCache สด)
+     */
+    function getVisitApiRight(visit) {
+      if (visit.dflow_data) {
+        return {
+          maininscl_id: visit.dflow_data.maininscl_id || '',
+          maininscl_name: visit.dflow_data.maininscl_name || '',
+          subinscl_id: visit.dflow_data.subinscl_id || '',
+          subinscl_name: visit.dflow_data.subinscl_name || '',
+          hospmain_code: visit.dflow_data.hospmain_code || '',
+          hospmain_name: visit.dflow_data.hospmain_name || ''
+        };
+      }
+      const nhsoData = nhsoCache.get(visit.cid);
+      if (nhsoData && nhsoData.funds && nhsoData.funds.length > 0) {
+        const fund = nhsoData.funds[0];
+        return {
+          maininscl_id: fund.mainInscl?.id || '',
+          maininscl_name: fund.mainInscl?.name || '',
+          subinscl_id: fund.subInscl?.id || '',
+          subinscl_name: fund.subInscl?.name || '',
+          hospmain_code: fund.hospMain?.hcode || '',
+          hospmain_name: fund.hospMain?.hname || ''
+        };
+      }
+      return null;
+    }
+
+    /**
+     * ตรวจสอบว่าสิทธิ์ที่ได้จาก API ตรงกับสิทธิ์ใน HOSxP (pttype) หรือไม่
+     */
+    function checkRightMatch(visit) {
+      const apiRight = getVisitApiRight(visit);
+      if (!apiRight || (!apiRight.maininscl_id && !apiRight.subinscl_id)) {
+        return {
+          checked: false,
+          isMatch: false,
+          expectedPttypes: [],
+          expectedLabel: '-'
+        };
+      }
+
+      const main = (apiRight.maininscl_id || '').trim().toUpperCase();
+      const sub = (apiRight.subinscl_id || '').trim().toUpperCase();
+      const hospmain = (apiRight.hospmain_code || visit.hospmain || '').trim();
+      const hosPttype = (visit.pttype || '').trim();
+      const isOwnHosp = (hospmain === '10677');
+      const isOutCupRbr = isRbrOutCup(hospmain);
+
+      let expectedPttypes = [];
+      let expectedLabel = '';
+
+      // 1. สิทธิคนพิการ (DIS)
+      if (main === 'DIS' || sub === '74') {
+        if (sub === 'D1') {
+          expectedPttypes = ['64'];
+          expectedLabel = '64 (ประกันตนคนพิการ)';
+        } else if (isOwnHosp) {
+          expectedPttypes = ['74'];
+          expectedLabel = '74 (ผู้พิการ ในเขต)';
+        } else if (isOutCupRbr) {
+          expectedPttypes = ['89'];
+          expectedLabel = '89 (ผู้พิการ นอก CUP)';
+        } else {
+          expectedPttypes = ['90'];
+          expectedLabel = '90 (ผู้พิการ ต่าง จว.)';
+        }
+      }
+      // 2. สิทธิบัตรทอง (UCS / WEL)
+      else if (main === 'UCS' || main === 'WEL') {
+        if (isOwnHosp) {
+          expectedPttypes = ['91', '45', '9C'];
+          expectedLabel = '91 (บัตรทอง ในเขต)';
+        } else if (isOutCupRbr) {
+          expectedPttypes = ['92', '9C'];
+          expectedLabel = '92 (บัตรทอง นอก CUP)';
+        } else {
+          expectedPttypes = ['93', '9C'];
+          expectedLabel = '93 (บัตรทอง ต่าง จว.)';
+        }
+      }
+      // 3. สิทธิข้าราชการ กรมบัญชีกลาง (OFC)
+      else if (main === 'OFC') {
+        const ofcMap = {
+          'O1': ['2A', '20'],
+          'O2': ['2B', '20'],
+          'O3': ['2C', '20'],
+          'O4': ['2D', '20'],
+          'O5': ['2E', '20'],
+          'E1': ['5B', '24', '20'],
+          'E2': ['5D', '24', '20'],
+          'G3': ['2V', '20'],
+          'G4': ['2W', '20'],
+          'T5': ['2Q', '20'],
+          'C4': ['2S', '20'],
+          'G1': ['20']
+        };
+        if (ofcMap[sub]) {
+          expectedPttypes = ofcMap[sub];
+          expectedLabel = expectedPttypes[0];
+        } else {
+          expectedPttypes = ['2A', '2B', '2C', '2D', '2E', '20', '24', '5B', '5D', '2V', '2W', '2Q', '2S'];
+          expectedLabel = '2A-2E (ข้าราชการ)';
+        }
+      }
+      // 4. สิทธิข้าราชการส่วนท้องถิ่น (LGO)
+      else if (main === 'LGO') {
+        const lgoMap = {
+          'L1': ['6A', '20'],
+          'L2': ['6B', '20'],
+          'L3': ['6C', '20'],
+          'L4': ['6D', '20']
+        };
+        if (lgoMap[sub]) {
+          expectedPttypes = lgoMap[sub];
+          expectedLabel = expectedPttypes[0];
+        } else {
+          expectedPttypes = ['6A', '6B', '6C', '6D', '20'];
+          expectedLabel = '6A-6D (อปท.)';
+        }
+      }
+      // 5. สิทธิประกันสังคม (SSS / SSI)
+      else if (main === 'SSS' || main === 'SSI') {
+        if (sub === 'S6') {
+          expectedPttypes = ['33'];
+          expectedLabel = '33 (ประกันสังคมทุพพลภาพ)';
+        } else if (isOwnHosp) {
+          expectedPttypes = ['34'];
+          expectedLabel = '34 (ประกันสังคม รพ.ราชบุรี)';
+        } else {
+          expectedPttypes = ['36'];
+          expectedLabel = '36 (ประกันสังคม นอกเขต)';
+        }
+      }
+      // 6. กลุ่มบุคคลที่มีปัญหาสถานะและสิทธิ (ST / STP)
+      else if (sub === 'ST' || main === 'STP') {
+        if (isOwnHosp) {
+          expectedPttypes = ['79'];
+          expectedLabel = '79 (สถานะและสิทธิ ในเขต)';
+        } else {
+          expectedPttypes = ['80'];
+          expectedLabel = '80 (สถานะและสิทธิ นอกเขต)';
+        }
+      }
+      else {
+        expectedPttypes = ['10'];
+        expectedLabel = '10 (ชำระเงินเอง)';
+      }
+
+      // กรณีอุบัติเหตุ พรบ. 13
+      if (hosPttype === '13') {
+        expectedPttypes.push('13');
+      }
+
+      const isMatch = expectedPttypes.includes(hosPttype);
+
+      return {
+        checked: true,
+        isMatch,
+        expectedPttypes,
+        expectedLabel,
+        hosPttype,
+        apiMain: main,
+        apiSub: sub,
+        hospmain
+      };
+    }
+
+    /**
+     * แสดงผลคอลัมน์ ตรวจสอบสิทธิ์ API (ถ้าตรงกับสิทธิ์ใน HOSxP แสดงเครื่องหมายถูก ✓)
+     */
+    function renderRightMatchCell(visit) {
+      const match = checkRightMatch(visit);
+
+      if (!match.checked) {
+        return `<span class="text-slate-400 text-xs italic font-mono" title="ยังไม่ได้ตรวจสอบสิทธิ์ API">-</span>`;
+      }
+
+      if (match.isMatch) {
+        return `
+          <div class="inline-flex items-center justify-center">
+            <span class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-bold bg-emerald-100 text-emerald-800 border border-emerald-300 shadow-2xs" title="สิทธิตรงกับ HOSxP: ${visit.pttype} (${visit.pttypename || ''})">
+              <i data-lucide="check" class="w-4 h-4 mr-1 text-emerald-600 stroke-[3]"></i>✓ ตรงกัน
+            </span>
+          </div>
+        `;
+      }
+
+      return `
+        <div class="inline-flex items-center justify-center">
+          <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold bg-rose-50 text-rose-700 border border-rose-200 shadow-2xs" title="สิทธิไม่ตรง: HOS คือ ${visit.pttype} (${visit.pttypename || ''}) แต่ API แนะนำ ${match.expectedLabel}">
+            <i data-lucide="x" class="w-3.5 h-3.5 mr-1 text-rose-500 stroke-[2.5]"></i>ไม่ตรง (${match.expectedPttypes[0] || '?'})
+          </span>
+        </div>
+      `;
+    }
+
     // Render table rows
     function renderTable(visits) {
       const tbody = document.getElementById('visit-table-body');
@@ -893,7 +1142,7 @@
       if (visits.length === 0) {
         tbody.innerHTML = `
           <tr>
-            <td colspan="10" class="py-12 text-center text-slate-400">
+            <td colspan="11" class="py-12 text-center text-slate-400">
               <i data-lucide="search-x" class="w-8 h-8 mx-auto mb-2 text-slate-300"></i>
               <p>ไม่พบข้อมูลผู้รับบริการตามเงื่อนไขที่เลือก</p>
             </td>
@@ -942,6 +1191,10 @@
             <!-- NHSO Right Column -->
             <td class="py-3 px-3" id="nhso-cell-${v.vn}">
               ${renderNhsoCell(nhsoData, v)}
+            </td>
+            <!-- ตรวจสอบสิทธิ์ API Column (แสดงเครื่องหมายถูกถ้าตรงกับสิทธิ์ใน hos) -->
+            <td class="py-3 px-3 text-center" id="right-match-cell-${v.vn}">
+              ${renderRightMatchCell(v)}
             </td>
             <!-- Authen Code (API) Column -->
             <td class="py-3 px-3 text-center" id="auth-api-cell-${v.vn}">
@@ -1079,6 +1332,7 @@
     function updateSingleRowDOM(visit) {
       const authHosCell = document.getElementById(`auth-hos-cell-${visit.vn}`);
       const nhsoCell = document.getElementById(`nhso-cell-${visit.vn}`);
+      const matchCell = document.getElementById(`right-match-cell-${visit.vn}`);
       const authApiCell = document.getElementById(`auth-api-cell-${visit.vn}`);
 
       if (authHosCell) {
@@ -1086,6 +1340,9 @@
       }
       if (nhsoCell) {
         nhsoCell.innerHTML = renderNhsoCell(null, visit);
+      }
+      if (matchCell) {
+        matchCell.innerHTML = renderRightMatchCell(visit);
       }
       if (authApiCell) {
         authApiCell.innerHTML = renderAuthenApiCell(visit);
@@ -1796,6 +2053,7 @@
       currentRawAuthenJson = d.authen_json;
 
       const isHospMatch = visit.hospmain && d.hospmain_code && visit.hospmain.trim() === d.hospmain_code.trim();
+      const rightMatch = checkRightMatch(visit);
       const hosAuth = (visit.auth_code || '').trim();
       const apiAuth = (d.claim_code || '').trim();
       const isAuthMismatch = Boolean(hosAuth && apiAuth && hosAuth.toLowerCase() !== apiAuth.toLowerCase());
@@ -1862,9 +2120,15 @@
                   </td>
                   <td class="py-3.5 px-4 text-blue-700 font-medium">
                     <div class="font-bold text-blue-900">${d.maininscl_name || '-'}</div>
-                    <div class="text-xs text-slate-500 mt-0.5">${d.subinscl_name ? `(${d.subinscl_name})` : ''} รหัส: ${d.maininscl_id || '-'}</div>
+                    <div class="text-xs text-slate-500 mt-0.5">${d.subinscl_name ? `(${d.subinscl_name})` : ''} รหัส: ${d.maininscl_id || '-'} / ${d.subinscl_id || '-'}</div>
                   </td>
-                  <td class="py-3.5 px-4 text-center text-slate-400">-</td>
+                  <td class="py-3.5 px-4 text-center">
+                    ${rightMatch.isMatch 
+                      ? `<span class="px-2.5 py-1 bg-emerald-100 text-emerald-800 border border-emerald-300 rounded-lg font-bold text-xs inline-flex items-center"><i data-lucide="check" class="w-3.5 h-3.5 mr-1 text-emerald-600 stroke-[3]"></i>✓ ตรงกัน</span>` 
+                      : (rightMatch.checked 
+                          ? `<span class="px-2.5 py-1 bg-rose-100 text-rose-800 border border-rose-300 rounded-lg text-xs font-semibold inline-flex items-center" title="API แนะนำ: ${rightMatch.expectedLabel}"><i data-lucide="x" class="w-3.5 h-3.5 mr-1 text-rose-600"></i>ไม่ตรง (${rightMatch.expectedPttypes[0] || '?'})</span>` 
+                          : `<span class="text-slate-400">-</span>`)}
+                  </td>
                 </tr>
                 <tr class="hover:bg-slate-50/60 transition">
                   <td class="py-3.5 px-4 font-semibold text-slate-700">รพ.หลัก (Hosp Main)</td>
