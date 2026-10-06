@@ -125,6 +125,11 @@ function mapNhsoToHosPttype(mainId, subId, hospmain, hospsub = '', currentHosPtt
     return isOwnHosp ? '79' : '80';
   }
 
+  // 7. สิทธิครูเอกชน (PVT)
+  if (main === 'PVT' || sub === 'P1') {
+    return '25'; // ครูเอกชน (สำรองจ่าย)
+  }
+
   // Fallback
   return currentHosPttype || '10';
 }

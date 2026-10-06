@@ -1554,6 +1554,11 @@
           expectedLabel = '80 (สถานะและสิทธิ นอกเขต)';
         }
       }
+      // 7. สิทธิครูเอกชน (PVT)
+      else if (main === 'PVT' || sub === 'P1') {
+        expectedPttypes = ['25'];
+        expectedLabel = '25 (ครูเอกชน สำรองจ่าย)';
+      }
       else {
         expectedPttypes = ['10'];
         expectedLabel = '10 (ชำระเงินเอง)';
