@@ -6,6 +6,7 @@ const rightSearchController = require('../controllers/rightSearchController');
 const authenHistoryController = require('../controllers/authenHistoryController');
 const visitController = require('../controllers/visitController');
 const vnAuthenController = require('../controllers/vnAuthenController');
+const hosSyncController = require('../controllers/hosSyncController');
 
 // 1. Health check
 router.get('/health', (req, res) => tokenController.health(req, res));
@@ -44,5 +45,10 @@ router.get('/api/visits', (req, res) => visitController.getVisits(req, res));
 // 6. D-Flow vn_nhso_authen (บันทึกและตรวจสอบเฉพาะรายที่ยังไม่มี)
 router.post('/api/vn-authen/check-and-save', (req, res) => vnAuthenController.checkAndSave(req, res));
 router.get('/api/vn-authen/:vn', (req, res) => vnAuthenController.getByVn(req, res));
+
+// 7. HOSxP Sync (บันทึกข้อมูลสิทธิและ Authen Code กลับลง HOSxP)
+router.get('/api/hos-sync/preview/:vn', (req, res) => hosSyncController.preview(req, res));
+router.post('/api/hos-sync/preview', (req, res) => hosSyncController.preview(req, res));
+router.post('/api/hos-sync/save', (req, res) => hosSyncController.save(req, res));
 
 module.exports = router;

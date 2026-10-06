@@ -284,11 +284,12 @@
               </th>
               <th class="py-3 px-3 text-center min-w-[150px]">Authen Code (API)</th>
               <th class="py-3 px-3">ผู้บันทึก (Staff)</th>
+              <th class="py-3 px-3 text-center min-w-[125px]">บันทึก HOS</th>
             </tr>
           </thead>
           <tbody id="visit-table-body" class="divide-y divide-slate-100 text-slate-700">
             <tr>
-              <td colspan="10" class="py-12 text-center text-slate-400">
+              <td colspan="11" class="py-12 text-center text-slate-400">
                 <i data-lucide="inbox" class="w-10 h-10 mx-auto mb-2 stroke-1"></i>
                 <p>เลือกวันที่และแผนก แล้วกดปุ่ม "ค้นหาข้อมูล"</p>
               </td>
@@ -368,6 +369,10 @@
           <span>ตาราง <code class="font-mono text-slate-700 bg-slate-200/80 px-2 py-0.5 rounded font-semibold text-xs">d-flow.vn_nhso_authen</code></span>
         </div>
         <div class="flex items-center space-x-3">
+          <button id="right-modal-btn-sync-hos" onclick="openHosSyncModal(rightModalCurrentVn)" class="px-4 py-2 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white text-sm font-semibold rounded-lg shadow-sm transition flex items-center space-x-1.5 cursor-pointer">
+            <i data-lucide="database" class="w-4 h-4"></i>
+            <span>บันทึกลง HOSxP</span>
+          </button>
           <button id="right-modal-btn-recheck" class="px-4 py-2 bg-blue-50 hover:bg-blue-100 text-blue-700 text-sm font-semibold rounded-lg border border-blue-200 transition flex items-center space-x-1.5 shadow-xs">
             <i data-lucide="refresh-cw" class="w-4 h-4"></i>
             <span>ตรวจใหม่จาก สปสช.</span>
@@ -450,6 +455,52 @@
         <button onclick="closeAgentModal()" class="px-4 py-2 bg-slate-200 hover:bg-slate-300 text-slate-700 font-semibold rounded-lg transition">
           ปิดหน้าต่าง
         </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- HOSxP Sync Confirmation Modal -->
+  <div id="hos-sync-confirm-modal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-xs z-50 hidden flex items-center justify-center p-3 sm:p-4">
+    <div class="bg-white rounded-2xl shadow-2xl max-w-2xl w-full border border-slate-200 overflow-hidden flex flex-col">
+      <!-- Modal Header -->
+      <div class="px-6 py-4 bg-gradient-to-r from-emerald-600 to-teal-700 text-white flex items-center justify-between">
+        <div class="flex items-center space-x-3">
+          <div class="w-10 h-10 rounded-xl bg-white/20 flex items-center justify-center shadow-xs">
+            <i data-lucide="database" class="w-5 h-5 text-white"></i>
+          </div>
+          <div>
+            <h3 class="text-base font-bold text-white leading-tight">บันทึกข้อมูลสิทธิและ Authen ลงฐานข้อมูล HOSxP</h3>
+            <p class="text-xs text-emerald-100 mt-0.5">อัปเดตข้อมูลสิทธิและ Authen Code เข้าตาราง ovst และ visit_pttype</p>
+          </div>
+        </div>
+        <button onclick="closeHosSyncModal()" class="text-white/80 hover:text-white p-1 rounded-lg hover:bg-white/10 transition cursor-pointer">
+          <i data-lucide="x" class="w-5 h-5"></i>
+        </button>
+      </div>
+
+      <!-- Modal Body (Preview comparison) -->
+      <div class="p-6 overflow-y-auto max-h-[75vh] space-y-4" id="hos-sync-modal-body">
+        <div class="text-center py-10 text-slate-400">
+          <i data-lucide="loader-2" class="w-8 h-8 mx-auto animate-spin mb-2 text-emerald-600"></i>
+          <p class="text-sm">กำลังเตรียมข้อมูลสำหรับบันทึก...</p>
+        </div>
+      </div>
+
+      <!-- Modal Footer -->
+      <div class="px-6 py-4 bg-slate-50 border-t border-slate-200 flex items-center justify-between">
+        <div class="text-xs text-amber-800 bg-amber-50 border border-amber-200 px-3 py-1.5 rounded-lg flex items-center space-x-1.5">
+          <i data-lucide="shield-alert" class="w-4 h-4 text-amber-600 shrink-0"></i>
+          <span>บันทึกผ่าน Transaction ความปลอดภัยสูง</span>
+        </div>
+        <div class="flex items-center space-x-3">
+          <button onclick="closeHosSyncModal()" class="px-4 py-2 bg-slate-200 hover:bg-slate-300 text-slate-700 text-sm font-semibold rounded-xl transition cursor-pointer">
+            ยกเลิก
+          </button>
+          <button id="btn-confirm-save-hos" onclick="executeHosSync()" class="px-5 py-2 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white text-sm font-bold rounded-xl shadow-md hover:shadow-lg transition flex items-center space-x-2 cursor-pointer">
+            <i data-lucide="check" class="w-4 h-4"></i>
+            <span>ยืนยันบันทึกลง HOSxP</span>
+          </button>
+        </div>
       </div>
     </div>
   </div>
@@ -1197,44 +1248,13 @@
               <div class="text-xs text-slate-400">${v.spclty_name || ''}</div>
             </td>
             <!-- ovst : pttype, pttypeno, hospmain, hospsub -->
-            <td class="py-3 px-3">
-              <div class="font-medium text-slate-900 text-sm flex items-center space-x-1">
-                <span class="font-bold text-slate-800 font-mono">${v.pttype || '-'}</span>
-                <span class="text-slate-600 truncate max-w-[170px]" title="${v.pttypename || ''}">: ${v.pttypename || '-'}</span>
-              </div>
-              <div class="text-xs text-slate-500 font-mono mt-0.5">
-                ${v.pttypeno ? `เลขที่: <span class="text-slate-700">${v.pttypeno}</span>` : '<span class="text-slate-400 italic">ไม่มีเลขที่</span>'}
-              </div>
-              <div class="text-xs text-slate-600 flex items-center space-x-1.5 mt-0.5 font-mono">
-                <span>หลัก: <b class="text-slate-800 font-semibold">${v.hospmain || '-'}</b></span>
-                <span class="text-slate-300">|</span>
-                <span>รอง: <b class="text-slate-800 font-semibold">${v.hospsub || '-'}</b></span>
-              </div>
+            <td class="py-3 px-3" id="ovst-cell-${v.vn}">
+              ${renderOvstCell(v)}
             </td>
 
             <!-- visit_pttype : pttype, pttypeno, hospmain, hospsub, authen_code (HOS) -->
-            <td class="py-3 px-3">
-              ${v.vp_pttype ? `
-                <div class="font-medium text-indigo-950 text-sm flex items-center space-x-1">
-                  <span class="font-bold text-indigo-700 font-mono">${v.vp_pttype}</span>
-                  <span class="text-indigo-900 truncate max-w-[170px]" title="${v.vp_pttypename || ''}">: ${v.vp_pttypename || '-'}</span>
-                </div>
-                <div class="text-xs text-slate-500 font-mono mt-0.5">
-                  ${v.vp_pttypeno ? `เลขที่: <span class="text-slate-700">${v.vp_pttypeno}</span>` : '<span class="text-slate-400 italic">ไม่มีเลขที่</span>'}
-                </div>
-                <div class="text-xs text-slate-600 flex items-center space-x-1.5 mt-0.5 font-mono">
-                  <span>หลัก: <b class="text-indigo-900 font-semibold">${v.vp_hospmain || '-'}</b></span>
-                  <span class="text-slate-300">|</span>
-                  <span>รอง: <b class="text-indigo-900 font-semibold">${v.vp_hospsub || '-'}</b></span>
-                </div>
-              ` : `
-                <div class="text-slate-400 text-xs italic font-mono">- ไม่มีใน visit_pttype -</div>
-              `}
-              <!-- Authen Code (HOS) รวมใน visit_pttype -->
-              <div class="mt-1.5 pt-1.5 border-t border-slate-100 flex items-center space-x-1.5 text-xs" id="auth-hos-cell-${v.vn}">
-                <span class="text-[10px] text-slate-400 font-semibold">Authen:</span>
-                ${renderAuthenHosCell(v)}
-              </div>
+            <td class="py-3 px-3" id="vp-cell-${v.vn}">
+              ${renderVpCell(v)}
             </td>
             <!-- NHSO Right Column -->
             <td class="py-3 px-3" id="nhso-cell-${v.vn}">
@@ -1254,12 +1274,84 @@
                 ${v.staff || '-'}
               </span>
             </td>
+            <!-- Action บันทึกลง HOSxP Column -->
+            <td class="py-3 px-3 text-center" id="action-hos-cell-${v.vn}">
+              ${renderHosSyncActionCell(v)}
+            </td>
           </tr>
         `;
       });
 
       tbody.innerHTML = html;
       lucide.createIcons();
+    }
+
+    // Render content for ovst cell
+    function renderOvstCell(v) {
+      return `
+        <div class="font-medium text-slate-900 text-sm flex items-center space-x-1">
+          <span class="font-bold text-slate-800 font-mono">${v.pttype || '-'}</span>
+          <span class="text-slate-600 truncate max-w-[170px]" title="${v.pttypename || ''}">: ${v.pttypename || '-'}</span>
+        </div>
+        <div class="text-xs text-slate-500 font-mono mt-0.5">
+          ${v.pttypeno ? `เลขที่: <span class="text-slate-700">${v.pttypeno}</span>` : '<span class="text-slate-400 italic">ไม่มีเลขที่</span>'}
+        </div>
+        <div class="text-xs text-slate-600 flex items-center space-x-1.5 mt-0.5 font-mono">
+          <span>หลัก: <b class="text-slate-800 font-semibold">${v.hospmain || '-'}</b></span>
+          <span class="text-slate-300">|</span>
+          <span>รอง: <b class="text-slate-800 font-semibold">${v.hospsub || '-'}</b></span>
+        </div>
+      `;
+    }
+
+    // Render content for visit_pttype cell
+    function renderVpCell(v) {
+      return `
+        ${v.vp_pttype ? `
+          <div class="font-medium text-indigo-950 text-sm flex items-center space-x-1">
+            <span class="font-bold text-indigo-700 font-mono">${v.vp_pttype}</span>
+            <span class="text-indigo-900 truncate max-w-[170px]" title="${v.vp_pttypename || ''}">: ${v.vp_pttypename || '-'}</span>
+          </div>
+          <div class="text-xs text-slate-500 font-mono mt-0.5">
+            ${v.vp_pttypeno ? `เลขที่: <span class="text-slate-700">${v.vp_pttypeno}</span>` : '<span class="text-slate-400 italic">ไม่มีเลขที่</span>'}
+          </div>
+          <div class="text-xs text-slate-600 flex items-center space-x-1.5 mt-0.5 font-mono">
+            <span>หลัก: <b class="text-indigo-900 font-semibold">${v.vp_hospmain || '-'}</b></span>
+            <span class="text-slate-300">|</span>
+            <span>รอง: <b class="text-indigo-900 font-semibold">${v.vp_hospsub || '-'}</b></span>
+          </div>
+        ` : `
+          <div class="text-slate-400 text-xs italic font-mono">- ไม่มีใน visit_pttype -</div>
+        `}
+        <!-- Authen Code (HOS) รวมใน visit_pttype -->
+        <div class="mt-1.5 pt-1.5 border-t border-slate-100 flex items-center space-x-1.5 text-xs" id="auth-hos-cell-${v.vn}">
+          <span class="text-[10px] text-slate-400 font-semibold">Authen:</span>
+          ${renderAuthenHosCell(v)}
+        </div>
+      `;
+    }
+
+    // Render Action button to sync to HOSxP
+    function renderHosSyncActionCell(v) {
+      const match = checkRightMatch(v);
+      const hasHosAuth = Boolean(v.auth_code && v.auth_code.trim());
+      const isComplete = match.checked && match.isMatch && hasHosAuth;
+
+      if (isComplete) {
+        return `
+          <button onclick="openHosSyncModal('${v.vn}')" title="ข้อมูลตรงแล้ว (คลิกเพื่อดูหรือปรับปรุงซ้ำ)" class="px-2.5 py-1.5 rounded-lg text-xs font-semibold text-emerald-700 bg-emerald-50 hover:bg-emerald-100 border border-emerald-300 transition inline-flex items-center space-x-1 shadow-2xs cursor-pointer">
+            <i data-lucide="check-check" class="w-3.5 h-3.5 text-emerald-600"></i>
+            <span>ตรงแล้ว</span>
+          </button>
+        `;
+      }
+
+      return `
+        <button onclick="openHosSyncModal('${v.vn}')" title="ตรวจสอบและบันทึกสิทธิ & Authen Code ลง HOSxP" class="px-2.5 py-1.5 rounded-lg text-xs font-semibold text-white bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 shadow-2xs hover:shadow-xs transition inline-flex items-center space-x-1 cursor-pointer">
+          <i data-lucide="database" class="w-3.5 h-3.5"></i>
+          <span>บันทึก HOS</span>
+        </button>
+      `;
     }
 
     // Render content for NHSO status cell
@@ -1378,11 +1470,20 @@
 
     // Helper to update cells for a single row in DOM
     function updateSingleRowDOM(visit) {
+      const ovstCell = document.getElementById(`ovst-cell-${visit.vn}`);
+      const vpCell = document.getElementById(`vp-cell-${visit.vn}`);
       const authHosCell = document.getElementById(`auth-hos-cell-${visit.vn}`);
       const nhsoCell = document.getElementById(`nhso-cell-${visit.vn}`);
       const matchCell = document.getElementById(`right-match-cell-${visit.vn}`);
       const authApiCell = document.getElementById(`auth-api-cell-${visit.vn}`);
+      const actionHosCell = document.getElementById(`action-hos-cell-${visit.vn}`);
 
+      if (ovstCell) {
+        ovstCell.innerHTML = renderOvstCell(visit);
+      }
+      if (vpCell) {
+        vpCell.innerHTML = renderVpCell(visit);
+      }
       if (authHosCell) {
         authHosCell.innerHTML = renderAuthenHosCell(visit);
       }
@@ -1394,6 +1495,9 @@
       }
       if (authApiCell) {
         authApiCell.innerHTML = renderAuthenApiCell(visit);
+      }
+      if (actionHosCell) {
+        actionHosCell.innerHTML = renderHosSyncActionCell(visit);
       }
       lucide.createIcons();
     }
@@ -2238,6 +2342,23 @@
           </div>
         </div>
 
+        <!-- Action Banner: Sync to HOSxP -->
+        <div class="p-4 bg-gradient-to-r from-emerald-50 via-teal-50 to-slate-50 border border-emerald-200 rounded-2xl flex flex-wrap items-center justify-between gap-3 shadow-xs">
+          <div class="flex items-center space-x-3.5">
+            <div class="w-11 h-11 rounded-xl bg-gradient-to-tr from-emerald-600 to-teal-600 text-white flex items-center justify-center shadow-sm shrink-0">
+              <i data-lucide="database" class="w-6 h-6"></i>
+            </div>
+            <div>
+              <div class="font-bold text-slate-800 text-sm">พร้อมบันทึกข้อมูลสิทธิและการ Authen กลับลง HOSxP</div>
+              <div class="text-xs text-slate-500 mt-0.5">ระบบจะปรับปรุงตาราง <code class="font-mono text-emerald-700 bg-emerald-100/70 px-1 py-0.5 rounded font-semibold text-[11px]">ovst</code> และ <code class="font-mono text-indigo-700 bg-indigo-100/70 px-1 py-0.5 rounded font-semibold text-[11px]">visit_pttype</code> ให้ถูกต้องตรงกับ สปสช.</div>
+            </div>
+          </div>
+          <button onclick="openHosSyncModal('${d.vn}')" class="px-5 py-2.5 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white font-bold text-sm rounded-xl shadow-md hover:shadow-lg transition flex items-center space-x-2 cursor-pointer">
+            <i data-lucide="arrow-down-to-dot" class="w-4.5 h-4.5"></i>
+            <span>บันทึกลง HOSxP เดี๋ยวนี้</span>
+          </button>
+        </div>
+
         <!-- Section 1: รายละเอียดสิทธิการรักษาจาก สปสช. -->
         <div class="border border-slate-200 rounded-2xl p-5 bg-white shadow-xs space-y-4">
           <div class="flex items-center justify-between border-b border-slate-100 pb-3">
@@ -2596,9 +2717,227 @@
     document.getElementById('right-detail-modal')?.addEventListener('click', (e) => {
       if (e.target.id === 'right-detail-modal') closeRightDetailModal();
     });
+    document.getElementById('hos-sync-confirm-modal')?.addEventListener('click', (e) => {
+      if (e.target.id === 'hos-sync-confirm-modal') closeHosSyncModal();
+    });
     document.getElementById('agent-modal')?.addEventListener('click', (e) => {
       if (e.target.id === 'agent-modal') closeAgentModal();
     });
+
+    // ==========================================
+    // HOSxP Sync Logic (ovst & visit_pttype)
+    // ==========================================
+    let currentHosSyncVn = null;
+    let currentHosSyncData = null;
+
+    async function openHosSyncModal(vn) {
+      if (!vn) return;
+      currentHosSyncVn = vn;
+      const modal = document.getElementById('hos-sync-confirm-modal');
+      const body = document.getElementById('hos-sync-modal-body');
+      const btnConfirm = document.getElementById('btn-confirm-save-hos');
+
+      if (btnConfirm) {
+        btnConfirm.disabled = false;
+        btnConfirm.innerHTML = `<i data-lucide="check" class="w-4 h-4"></i><span>ยืนยันบันทึกลง HOSxP</span>`;
+      }
+
+      body.innerHTML = `
+        <div class="text-center py-10 text-slate-400">
+          <i data-lucide="loader-2" class="w-8 h-8 mx-auto animate-spin mb-2 text-emerald-600"></i>
+          <p class="text-sm">กำลังโหลดและจัดเตรียมข้อมูลจาก HOSxP และ สปสช....</p>
+        </div>
+      `;
+      modal.classList.remove('hidden');
+      lucide.createIcons();
+
+      try {
+        const res = await fetch(`/api/hos-sync/preview/${vn}`).then(r => r.json());
+        if (!res.success || !res.data) {
+          throw new Error(res.message || 'ไม่สามารถโหลดข้อมูลสำหรับบันทึกได้');
+        }
+
+        const d = res.data;
+        currentHosSyncData = d;
+        const cur = d.current;
+        const tgt = d.target;
+
+        const isPttypeChange = cur.ovst_pttype !== tgt.pttype;
+
+        body.innerHTML = `
+          <!-- Patient Summary Card -->
+          <div class="p-4 bg-slate-50 border border-slate-200 rounded-xl flex items-center justify-between">
+            <div class="flex items-center space-x-3">
+              <div class="w-10 h-10 rounded-full bg-emerald-100 text-emerald-700 font-bold flex items-center justify-center text-sm">
+                ${escapeHtml((d.ptname || 'U').slice(0, 1))}
+              </div>
+              <div>
+                <div class="font-bold text-slate-800 text-sm">${escapeHtml(d.ptname || '-')}</div>
+                <div class="text-xs text-slate-500 font-mono mt-0.5">
+                  HN: <b class="text-slate-700">${escapeHtml(d.hn || '-')}</b> | VN: <b class="text-slate-700">${escapeHtml(d.vn)}</b> | CID: <b class="text-slate-700">${escapeHtml(d.cid || '-')}</b>
+                </div>
+              </div>
+            </div>
+            <span class="px-2.5 py-1 bg-emerald-100 text-emerald-800 border border-emerald-300 rounded-full text-xs font-semibold">
+              พร้อมบันทึก
+            </span>
+          </div>
+
+          <!-- Comparison Table -->
+          <div class="border border-slate-200 rounded-xl overflow-hidden shadow-2xs">
+            <table class="w-full text-xs text-left border-collapse">
+              <thead>
+                <tr class="bg-slate-100 text-slate-700 font-semibold border-b border-slate-200">
+                  <th class="py-2.5 px-3 w-1/4">รายการ</th>
+                  <th class="py-2.5 px-3 w-3/8 text-slate-600">ข้อมูลเดิมใน HOSxP</th>
+                  <th class="py-2.5 px-3 w-3/8 text-emerald-800 bg-emerald-50/50">ค่าใหม่ที่จะบันทึกลง HOSxP</th>
+                </tr>
+              </thead>
+              <tbody class="divide-y divide-slate-100 bg-white">
+                <tr>
+                  <td class="py-2.5 px-3 font-semibold text-slate-700">สิทธิการรักษา (pttype)</td>
+                  <td class="py-2.5 px-3 font-mono text-slate-700">
+                    <span class="font-bold">[${escapeHtml(cur.ovst_pttype || '-')}]</span> ${escapeHtml(cur.ovst_pttypename || '-')}
+                  </td>
+                  <td class="py-2.5 px-3 font-mono font-bold text-emerald-800 bg-emerald-50/40">
+                    <span class="inline-flex items-center space-x-1">
+                      <span>[${escapeHtml(tgt.pttype)}]</span>
+                      <span>${escapeHtml(tgt.pttypename || '-')}</span>
+                      ${isPttypeChange ? '<span class="px-1.5 py-0.2 bg-amber-100 text-amber-800 rounded text-[10px] ml-1">ปรับปรุงใหม่</span>' : '<span class="text-emerald-600 text-[10px] ml-1">✓ ตรงกัน</span>'}
+                    </span>
+                  </td>
+                </tr>
+                <tr>
+                  <td class="py-2.5 px-3 font-semibold text-slate-700">เลขที่สิทธิ (pttypeno)</td>
+                  <td class="py-2.5 px-3 font-mono text-slate-600">${escapeHtml(cur.ovst_pttypeno || '-')}</td>
+                  <td class="py-2.5 px-3 font-mono font-semibold text-emerald-800 bg-emerald-50/40">${escapeHtml(tgt.pttypeno || '-')}</td>
+                </tr>
+                <tr>
+                  <td class="py-2.5 px-3 font-semibold text-slate-700">รพ.หลัก (hospmain)</td>
+                  <td class="py-2.5 px-3 font-mono text-slate-600">${escapeHtml(cur.ovst_hospmain || '-')}</td>
+                  <td class="py-2.5 px-3 font-mono font-semibold text-emerald-800 bg-emerald-50/40">${escapeHtml(tgt.hospmain || '-')}</td>
+                </tr>
+                <tr>
+                  <td class="py-2.5 px-3 font-semibold text-slate-700">รพ.รอง (hospsub)</td>
+                  <td class="py-2.5 px-3 font-mono text-slate-600">${escapeHtml(cur.ovst_hospsub || '-')}</td>
+                  <td class="py-2.5 px-3 font-mono font-semibold text-emerald-800 bg-emerald-50/40">${escapeHtml(tgt.hospsub || '-')}</td>
+                </tr>
+                <tr>
+                  <td class="py-2.5 px-3 font-semibold text-slate-700">วันที่เริ่มใช้สิทธิ (begin_date)</td>
+                  <td class="py-2.5 px-3 font-mono text-slate-500">${cur.vp_begin_date ? String(cur.vp_begin_date).slice(0, 10) : '-'}</td>
+                  <td class="py-2.5 px-3 font-mono text-slate-700 bg-emerald-50/40">${tgt.begin_date || '-'}</td>
+                </tr>
+                <tr class="bg-emerald-50/30">
+                  <td class="py-2.5 px-3 font-bold text-emerald-900">Authen Code (visit_pttype.auth_code)</td>
+                  <td class="py-2.5 px-3 font-mono ${cur.vp_auth_code ? 'font-bold text-slate-800' : 'text-slate-400 italic'}">
+                    ${escapeHtml(cur.vp_auth_code || 'ยังไม่มีใน HOSxP')}
+                  </td>
+                  <td class="py-2.5 px-3 font-mono font-bold text-emerald-700 text-sm bg-emerald-100/50">
+                    ${tgt.auth_code ? `<span class="inline-flex items-center space-x-1"><i data-lucide="key" class="w-3.5 h-3.5 text-emerald-600"></i><span>${escapeHtml(tgt.auth_code)}</span></span>` : '<span class="text-slate-400 font-normal italic">-</span>'}
+                  </td>
+                </tr>
+                <tr>
+                  <td class="py-2 px-3 font-semibold text-slate-500">Claim Code (visit_pttype.claim_code)</td>
+                  <td class="py-2 px-3 text-slate-400 font-mono">-</td>
+                  <td class="py-2 px-3 text-slate-400 font-mono bg-emerald-50/40">NULL (เว้นว่างตามระเบียบ)</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          <!-- Database Scope Info -->
+          <div class="p-3 bg-blue-50 border border-blue-200 rounded-xl text-xs text-blue-900 space-y-1">
+            <div class="font-bold flex items-center space-x-1.5">
+              <i data-lucide="database" class="w-3.5 h-3.5 text-blue-600"></i>
+              <span>การทำงานในฐานข้อมูล HOSxP (hos):</span>
+            </div>
+            <ul class="list-disc list-inside space-y-0.5 text-blue-800 pl-1 text-[11px]">
+              <li><strong>ตาราง ovst:</strong> ปรับปรุง <code class="bg-blue-100 px-1 rounded">pttype</code>, <code class="bg-blue-100 px-1 rounded">pttypeno</code>, <code class="bg-blue-100 px-1 rounded">hospmain</code>, <code class="bg-blue-100 px-1 rounded">hospsub</code></li>
+              <li><strong>ตาราง visit_pttype:</strong> ${cur.vp_pttype ? 'ปรับปรุงแถวสิทธิเดิมและใส่ <code class="bg-blue-100 px-1 rounded">auth_code</code>' : 'เพิ่มแถวใหม่ (<code class="bg-blue-100 px-1 rounded">INSERT</code>) พร้อม <code class="bg-blue-100 px-1 rounded">auth_code</code>'}</li>
+            </ul>
+          </div>
+        `;
+        lucide.createIcons();
+      } catch (err) {
+        body.innerHTML = `
+          <div class="p-6 text-center text-red-600 space-y-2">
+            <i data-lucide="alert-circle" class="w-10 h-10 mx-auto text-red-500"></i>
+            <p class="font-bold text-sm">เกิดข้อผิดพลาดในการเตรียมข้อมูล</p>
+            <p class="text-xs text-slate-600">${escapeHtml(err.message)}</p>
+          </div>
+        `;
+        if (btnConfirm) btnConfirm.disabled = true;
+        lucide.createIcons();
+      }
+    }
+
+    function closeHosSyncModal() {
+      document.getElementById('hos-sync-confirm-modal')?.classList.add('hidden');
+      currentHosSyncVn = null;
+      currentHosSyncData = null;
+    }
+
+    async function executeHosSync() {
+      if (!currentHosSyncVn) return;
+      const vn = currentHosSyncVn;
+      const btnConfirm = document.getElementById('btn-confirm-save-hos');
+
+      if (btnConfirm) {
+        btnConfirm.disabled = true;
+        btnConfirm.innerHTML = `<i data-lucide="loader-2" class="w-4 h-4 animate-spin"></i><span>กำลังบันทึกลง HOSxP...</span>`;
+      }
+
+      try {
+        const res = await fetch('/api/hos-sync/save', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ vn })
+        }).then(r => r.json());
+
+        if (!res.success) {
+          throw new Error(res.message || 'บันทึกลง HOSxP ไม่สำเร็จ');
+        }
+
+        // Update local rawVisits state
+        const found = rawVisits.find(v => v.vn === vn);
+        if (found && res.savedData) {
+          const s = res.savedData;
+          found.pttype = s.pttype;
+          found.pttypename = s.pttypename;
+          found.pttypeno = s.pttypeno;
+          found.hospmain = s.hospmain;
+          found.hospsub = s.hospsub;
+          found.vp_pttype = s.pttype;
+          found.vp_pttypename = s.pttypename;
+          found.vp_pttypeno = s.pttypeno;
+          found.vp_hospmain = s.hospmain;
+          found.vp_hospsub = s.hospsub;
+          found.auth_code = s.auth_code;
+          found.vp_auth_code = s.auth_code;
+          updateSingleRowDOM(found);
+        }
+
+        updateKpis();
+        closeHosSyncModal();
+        showToast(`บันทึกข้อมูลสิทธิและ Authen Code (VN: ${vn}) ลง HOSxP สำเร็จ!`, 'success');
+
+        // If right-detail-modal is currently open, refresh its view
+        if (typeof rightModalCurrentVn !== 'undefined' && rightModalCurrentVn === vn) {
+          const detailModal = document.getElementById('right-detail-modal');
+          if (detailModal && !detailModal.classList.contains('hidden')) {
+            viewRightDbDetail(vn);
+          }
+        }
+      } catch (err) {
+        console.error('Error saving to HOSxP:', err);
+        showToast(`เกิดข้อผิดพลาด: ${err.message}`, 'error');
+        if (btnConfirm) {
+          btnConfirm.disabled = false;
+          btnConfirm.innerHTML = `<i data-lucide="check" class="w-4 h-4"></i><span>ลองใหม่อีกครั้ง</span>`;
+          lucide.createIcons();
+        }
+      }
+    }
 
     // Simple toast notification
     function showToast(message, type = 'info') {
