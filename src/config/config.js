@@ -28,6 +28,9 @@ const config = {
   agentSecret: process.env.AGENT_SECRET || 'nhso-agent-secret-10677-rbh',
   allowedSubnets: process.env.ALLOWED_SUBNETS || '10.,192.168.,172.,127.0.0.1,::1',
 
+  // JWT Configuration
+  jwtSecret: process.env.JWT_SECRET || 'nhso-authen-jwt-secret-key-rbh-10677',
+
   // HOSxP Database Configuration
   db: {
     host: process.env.HOS_DB_HOST || process.env.HIS_DB_HOST || '10.10.10.43',

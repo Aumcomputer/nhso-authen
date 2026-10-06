@@ -7,8 +7,28 @@ const authenHistoryController = require('../controllers/authenHistoryController'
 const visitController = require('../controllers/visitController');
 const vnAuthenController = require('../controllers/vnAuthenController');
 const hosSyncController = require('../controllers/hosSyncController');
+const authController = require('../controllers/authController');
+const exemptPttypeController = require('../controllers/exemptPttypeController');
+const { authenticate, requireAdmin } = require('../middleware/authMiddleware');
 
-// 1. Health check
+// 0. Authentication & User Management
+router.post('/api/auth/login', (req, res) => authController.login(req, res));
+router.post('/api/auth/logout', (req, res) => authController.logout(req, res));
+router.get('/api/auth/me', (req, res) => authController.me(req, res));
+
+// User Management (Admin only)
+router.get('/api/auth/users', authenticate, (req, res) => authController.listUsers(req, res));
+router.get('/api/auth/search-opdusers', authenticate, requireAdmin, (req, res) => authController.searchOpdUsers(req, res));
+router.post('/api/auth/users', authenticate, requireAdmin, (req, res) => authController.addUser(req, res));
+router.put('/api/auth/users/:id', authenticate, requireAdmin, (req, res) => authController.updateUser(req, res));
+router.delete('/api/auth/users/:id', authenticate, requireAdmin, (req, res) => authController.deleteUser(req, res));
+
+// 1. Exempt Pttypes (สิทธิ์ที่ไม่ต้องบอกว่าตรงกันหรือไม่ตรงกัน)
+router.get('/api/exempt-pttypes', (req, res) => exemptPttypeController.list(req, res));
+router.get('/api/exempt-pttypes/search', authenticate, requireAdmin, (req, res) => exemptPttypeController.searchHosPttypes(req, res));
+router.post('/api/exempt-pttypes', authenticate, requireAdmin, (req, res) => exemptPttypeController.add(req, res));
+router.put('/api/exempt-pttypes/:id', authenticate, requireAdmin, (req, res) => exemptPttypeController.update(req, res));
+router.delete('/api/exempt-pttypes/:id', authenticate, requireAdmin, (req, res) => exemptPttypeController.delete(req, res));
 router.get('/health', (req, res) => tokenController.health(req, res));
 router.get('/api/db/health', (req, res) => tokenController.dbHealth(req, res));
 router.get('/api/db/dflow-health', (req, res) => tokenController.dflowDbHealth(req, res));

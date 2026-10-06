@@ -76,6 +76,25 @@
           <i data-lucide="refresh-cw" class="w-3.5 h-3.5"></i>
           <span>รีเฟรช Token</span>
         </button>
+
+        <!-- User Profile & Action Menu -->
+        <div id="user-profile-menu" class="hidden flex items-center space-x-2 pl-3 border-l border-slate-200">
+          <div class="flex items-center space-x-2 bg-slate-100 border border-slate-200 px-2.5 py-1 rounded-full shadow-2xs">
+            <div class="w-5 h-5 rounded-full bg-emerald-600 text-white flex items-center justify-center font-bold text-[10px]" id="user-avatar-initial">U</div>
+            <span class="font-semibold text-slate-800 text-xs" id="user-display-name">กำลังโหลด...</span>
+            <span class="px-1.5 py-0.2 rounded-full text-[10px] font-bold bg-emerald-100 text-emerald-800" id="user-role-badge">Admin</span>
+          </div>
+
+          <!-- Settings Button -->
+          <button id="btn-open-settings" onclick="openSettingsModal()" title="การตั้งค่า / จัดการผู้ใช้งาน" class="p-1.5 text-slate-600 hover:text-emerald-700 hover:bg-emerald-50 rounded-lg border border-slate-200 hover:border-emerald-300 transition cursor-pointer">
+            <i data-lucide="settings" class="w-4 h-4"></i>
+          </button>
+
+          <!-- Logout Button -->
+          <button onclick="handleLogout()" title="ออกจากระบบ" class="p-1.5 text-slate-600 hover:text-rose-700 hover:bg-rose-50 rounded-lg border border-slate-200 hover:border-rose-300 transition cursor-pointer">
+            <i data-lucide="log-out" class="w-4 h-4"></i>
+          </button>
+        </div>
       </div>
     </div>
   </header>
@@ -505,6 +524,278 @@
     </div>
   </div>
 
+  <!-- Login Modal -->
+  <div id="login-modal" class="fixed inset-0 bg-slate-900/80 backdrop-blur-md z-60 hidden flex items-center justify-center p-4">
+    <div class="bg-white rounded-3xl shadow-2xl max-w-md w-full border border-slate-200 overflow-hidden flex flex-col">
+      <!-- Modal Header Banner -->
+      <div class="px-6 pt-8 pb-6 bg-gradient-to-br from-emerald-600 via-teal-600 to-cyan-700 text-white text-center relative">
+        <div class="w-16 h-16 rounded-2xl bg-white/20 backdrop-blur-md flex items-center justify-center mx-auto mb-3 shadow-md">
+          <i data-lucide="shield-check" class="w-9 h-9 text-white"></i>
+        </div>
+        <h2 class="text-xl font-bold tracking-tight">เข้าสู่ระบบ (HOSxP Login)</h2>
+        <p class="text-xs text-emerald-100 mt-1">ระบบตรวจสอบสิทธิ สปสช. & HOSxP Authentication</p>
+      </div>
+
+      <!-- Form Body -->
+      <form id="login-form" onsubmit="handleLoginSubmit(event)" class="p-6 space-y-4">
+        <div id="login-error-alert" class="hidden p-3 rounded-xl bg-rose-50 border border-rose-200 text-rose-700 text-xs flex items-center space-x-2">
+          <i data-lucide="alert-circle" class="w-4 h-4 text-rose-500 shrink-0"></i>
+          <span id="login-error-text">ชื่อผู้ใช้งานหรือรหัสผ่านไม่ถูกต้อง</span>
+        </div>
+
+        <div>
+          <label class="block text-xs font-semibold text-slate-700 mb-1.5">ชื่อผู้ใช้งาน HOSxP (loginname)</label>
+          <div class="relative">
+            <i data-lucide="user" class="w-4 h-4 text-slate-400 absolute left-3.5 top-3"></i>
+            <input type="text" id="login-username" required autocomplete="username" placeholder="เช่น sa, computer, user" class="w-full pl-10 pr-3.5 py-2.5 text-sm bg-slate-50 border border-slate-300 rounded-xl focus:bg-white focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 outline-none transition">
+          </div>
+        </div>
+
+        <div>
+          <label class="block text-xs font-semibold text-slate-700 mb-1.5">รหัสผ่าน HOSxP (passweb)</label>
+          <div class="relative">
+            <i data-lucide="lock" class="w-4 h-4 text-slate-400 absolute left-3.5 top-3"></i>
+            <input type="password" id="login-password" required autocomplete="current-password" placeholder="รหัสผ่านระบบ HOSxP" class="w-full pl-10 pr-3.5 py-2.5 text-sm bg-slate-50 border border-slate-300 rounded-xl focus:bg-white focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 outline-none transition">
+          </div>
+          <p class="text-[11px] text-slate-400 mt-1">ใช้ชื่อผู้ใช้งานและรหัสผ่านเดียวกันกับระบบ HOSxP</p>
+        </div>
+
+        <button type="submit" id="btn-login-submit" class="w-full py-3 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white font-bold rounded-xl shadow-md hover:shadow-lg transition flex items-center justify-center space-x-2 cursor-pointer mt-2">
+          <i data-lucide="log-in" class="w-4 h-4"></i>
+          <span>เข้าสู่ระบบ</span>
+        </button>
+
+        <div class="text-center pt-1 text-[11px] text-slate-400">
+          ตรวจสอบสิทธิ์อนุญาตผ่านตาราง <code class="bg-slate-100 px-1 py-0.5 rounded text-slate-600 font-mono">nhso_auth_users</code>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Settings & User Management Modal -->
+  <div id="settings-modal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-xs z-50 hidden flex items-center justify-center p-3 sm:p-4">
+    <div class="bg-white rounded-2xl shadow-2xl max-w-4xl w-full border border-slate-200 overflow-hidden flex flex-col max-h-[90vh]">
+      <!-- Header -->
+      <div class="px-6 py-4 bg-gradient-to-r from-slate-800 to-slate-900 text-white flex items-center justify-between">
+        <div class="flex items-center space-x-3">
+          <div class="w-10 h-10 rounded-xl bg-white/10 flex items-center justify-center shadow-xs">
+            <i data-lucide="settings" class="w-5 h-5 text-emerald-400"></i>
+          </div>
+          <div>
+            <h3 class="text-base font-bold text-white leading-tight">การตั้งค่าระบบ (Settings)</h3>
+            <p class="text-xs text-slate-300 mt-0.5">จัดการสิทธิที่ยกเว้นเทียบความตรงกัน และผู้ใช้งานที่ได้รับอนุญาต</p>
+          </div>
+        </div>
+        <button onclick="closeSettingsModal()" class="text-white/70 hover:text-white p-1 rounded-lg hover:bg-white/10 transition cursor-pointer">
+          <i data-lucide="x" class="w-5 h-5"></i>
+        </button>
+      </div>
+
+      <!-- Settings Navigation Tabs -->
+      <div class="px-6 py-2.5 bg-slate-100 border-b border-slate-200 flex items-center space-x-2">
+        <button id="setting-tab-btn-exempt" onclick="switchSettingTab('exempt')" class="px-3.5 py-1.5 font-bold text-xs rounded-xl bg-emerald-600 text-white shadow-xs transition flex items-center space-x-1.5 cursor-pointer">
+          <i data-lucide="shield-off" class="w-4 h-4"></i>
+          <span>สิทธิที่ยกเว้นเทียบความตรงกัน (<span id="setting-exempt-tab-count">4</span>)</span>
+        </button>
+        <button id="setting-tab-btn-users" onclick="switchSettingTab('users')" class="px-3.5 py-1.5 font-semibold text-xs rounded-xl text-slate-600 hover:text-slate-900 hover:bg-slate-200 transition flex items-center space-x-1.5 cursor-pointer">
+          <i data-lucide="users" class="w-4 h-4"></i>
+          <span>ผู้ใช้งานที่ได้รับสิทธิ์ (<span id="setting-users-tab-count">0</span>)</span>
+        </button>
+      </div>
+
+      <!-- Settings Body -->
+      <div class="p-6 overflow-y-auto custom-scroll space-y-6 flex-1 text-slate-700">
+
+        <!-- ================= SECTION 1: EXEMPT PTTYPES ================= -->
+        <div id="setting-section-exempt" class="space-y-6">
+          <!-- Information Banner -->
+          <div class="p-3.5 rounded-xl bg-amber-50/80 border border-amber-200 text-xs text-amber-900 flex items-start space-x-2.5">
+            <i data-lucide="info" class="w-4 h-4 text-amber-600 shrink-0 mt-0.5"></i>
+            <div>
+              <p class="font-bold text-amber-950">สิทธิที่ยกเว้นการตรวจสอบความตรงกัน (Exempt Pttypes)</p>
+              <p class="text-amber-800 mt-0.5">ผู้รับบริการที่มีรหัสสิทธิตามรายการนี้ (เช่น 9C, 10, 1B, 52) จะไม่แสดงผลว่าสิทธิตรงกันหรือไม่ตรงกันในตาราง และไม่นำมานับเป็นสิทธิที่ไม่ตรง</p>
+            </div>
+          </div>
+
+          <!-- Add Exempt Pttype Form -->
+          <div class="bg-slate-50 border border-slate-200 rounded-2xl p-4 space-y-3">
+            <h4 class="font-bold text-sm text-slate-800 flex items-center space-x-2">
+              <i data-lucide="plus-circle" class="w-4 h-4 text-emerald-600"></i>
+              <span>เพิ่มรหัสสิทธิที่ต้องการยกเว้น (จาก HOSxP pttype)</span>
+            </h4>
+
+            <div class="grid grid-cols-1 md:grid-cols-12 gap-3 items-end">
+              <!-- Search Pttype Input -->
+              <div class="md:col-span-5 relative">
+                <label class="block text-xs font-semibold text-slate-600 mb-1">ค้นหารหัสสิทธิ HOSxP (pttype หรือ ชื่อ)</label>
+                <div class="relative">
+                  <i data-lucide="search" class="w-4 h-4 text-slate-400 absolute left-3 top-2.5"></i>
+                  <input type="text" id="setting-search-pttype" oninput="debounceSearchHosPttype()" placeholder="เช่น 9C, 10, 1B, 52..." class="w-full pl-9 pr-3 py-2 text-xs bg-white border border-slate-300 rounded-xl focus:ring-2 focus:ring-emerald-500 outline-none">
+                </div>
+                <!-- Dropdown search results -->
+                <div id="setting-pttype-dropdown" class="hidden absolute left-0 right-0 z-20 mt-1 bg-white border border-slate-200 rounded-xl shadow-xl max-h-48 overflow-y-auto custom-scroll p-1 divide-y divide-slate-100">
+                  <!-- dynamic list -->
+                </div>
+              </div>
+
+              <!-- Note Input -->
+              <div class="md:col-span-4">
+                <label class="block text-xs font-semibold text-slate-600 mb-1">หมายเหตุ (ถ้ามี)</label>
+                <input type="text" id="setting-exempt-note" placeholder="เช่น ชำระเงินเอง, ค่าบริการพิเศษ" class="w-full px-3 py-2 text-xs bg-white border border-slate-300 rounded-xl focus:ring-2 focus:ring-emerald-500 outline-none">
+              </div>
+
+              <!-- Submit Button -->
+              <div class="md:col-span-3">
+                <button onclick="submitAddExemptPttype()" id="btn-submit-add-exempt" class="w-full py-2 bg-emerald-600 hover:bg-emerald-700 text-white font-semibold text-xs rounded-xl shadow-sm transition flex items-center justify-center space-x-1.5 cursor-pointer">
+                  <i data-lucide="plus" class="w-4 h-4"></i>
+                  <span>เพิ่มสิทธิยกเว้น</span>
+                </button>
+              </div>
+            </div>
+
+            <!-- Preview Selected Pttype -->
+            <div id="selected-pttype-preview" class="hidden text-xs text-emerald-800 bg-emerald-50 border border-emerald-200 px-3 py-1.5 rounded-lg flex items-center justify-between">
+              <div class="flex items-center space-x-2">
+                <span class="font-mono font-bold px-1.5 py-0.2 bg-emerald-200 rounded" id="preview-pttype-code">-</span>
+                <span class="text-slate-500">•</span>
+                <span id="preview-pttype-name">-</span>
+              </div>
+              <button onclick="clearSelectedHosPttype()" class="text-slate-400 hover:text-slate-700 cursor-pointer"><i data-lucide="x" class="w-3.5 h-3.5"></i></button>
+            </div>
+          </div>
+
+          <!-- Exempt Pttypes Table -->
+          <div class="space-y-3">
+            <div class="flex items-center justify-between">
+              <h4 class="font-bold text-sm text-slate-800 flex items-center space-x-2">
+                <i data-lucide="list-filter" class="w-4 h-4 text-amber-600"></i>
+                <span>รายการสิทธิที่ยกเว้น (<span id="setting-exempt-count">0</span> รายการ)</span>
+              </h4>
+              <button onclick="fetchExemptPttypes()" class="text-xs text-slate-500 hover:text-emerald-700 flex items-center space-x-1 cursor-pointer">
+                <i data-lucide="refresh-cw" class="w-3.5 h-3.5"></i>
+                <span>รีเฟรช</span>
+              </button>
+            </div>
+
+            <div class="border border-slate-200 rounded-2xl overflow-hidden shadow-2xs">
+              <table class="w-full text-xs text-left border-collapse">
+                <thead>
+                  <tr class="bg-slate-100 text-slate-700 font-semibold border-b border-slate-200">
+                    <th class="py-2.5 px-3">#</th>
+                    <th class="py-2.5 px-3">รหัส (pttype)</th>
+                    <th class="py-2.5 px-3">ชื่อสิทธิการรักษา (HOSxP)</th>
+                    <th class="py-2.5 px-3">หมายเหตุ</th>
+                    <th class="py-2.5 px-3 text-center">สถานะ</th>
+                    <th class="py-2.5 px-3">วันที่เพิ่ม</th>
+                    <th class="py-2.5 px-3 text-center">จัดการ</th>
+                  </tr>
+                </thead>
+                <tbody id="setting-exempt-table-body" class="divide-y divide-slate-100 bg-white">
+                  <!-- dynamic rows -->
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
+        <!-- ================= SECTION 2: AUTHORIZED USERS ================= -->
+        <div id="setting-section-users" class="space-y-6 hidden">
+          <!-- Add User Section -->
+          <div class="bg-slate-50 border border-slate-200 rounded-2xl p-4 space-y-3">
+            <div class="flex items-center justify-between">
+              <h4 class="font-bold text-sm text-slate-800 flex items-center space-x-2">
+                <i data-lucide="user-plus" class="w-4 h-4 text-emerald-600"></i>
+                <span>เพิ่มผู้ใช้งานที่ได้รับสิทธิ์จาก HOSxP (opduser)</span>
+              </h4>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-12 gap-3 items-end">
+              <!-- Search opduser input -->
+              <div class="md:col-span-6 relative">
+                <label class="block text-xs font-semibold text-slate-600 mb-1">ค้นหาผู้ใช้จาก HOSxP (loginname หรือ ชื่อ)</label>
+                <div class="relative">
+                  <i data-lucide="search" class="w-4 h-4 text-slate-400 absolute left-3 top-2.5"></i>
+                  <input type="text" id="setting-search-opduser" oninput="debounceSearchOpdUser()" placeholder="พิมพ์ชื่อ หรือ loginname..." class="w-full pl-9 pr-3 py-2 text-xs bg-white border border-slate-300 rounded-xl focus:ring-2 focus:ring-emerald-500 outline-none">
+                </div>
+                <!-- Dropdown search results -->
+                <div id="setting-opduser-dropdown" class="hidden absolute left-0 right-0 z-20 mt-1 bg-white border border-slate-200 rounded-xl shadow-xl max-h-48 overflow-y-auto custom-scroll p-1 divide-y divide-slate-100">
+                  <!-- dynamic list -->
+                </div>
+              </div>
+
+              <!-- Selected User Details -->
+              <div class="md:col-span-3">
+                <label class="block text-xs font-semibold text-slate-600 mb-1">สิทธิ์ (Role)</label>
+                <select id="setting-user-role" class="w-full px-3 py-2 text-xs bg-white border border-slate-300 rounded-xl focus:ring-2 focus:ring-emerald-500 outline-none">
+                  <option value="user">ผู้ใช้งานทั่วไป (User)</option>
+                  <option value="admin">ผู้ดูแลระบบ (Admin)</option>
+                </select>
+              </div>
+
+              <div class="md:col-span-3">
+                <button onclick="submitAddAuthorizedUser()" id="btn-submit-add-user" class="w-full py-2 bg-emerald-600 hover:bg-emerald-700 text-white font-semibold text-xs rounded-xl shadow-sm transition flex items-center justify-center space-x-1.5 cursor-pointer">
+                  <i data-lucide="plus" class="w-4 h-4"></i>
+                  <span>เพิ่มผู้ใช้งาน</span>
+                </button>
+              </div>
+            </div>
+
+            <div id="selected-opduser-preview" class="hidden text-xs text-emerald-800 bg-emerald-50 border border-emerald-200 px-3 py-1.5 rounded-lg flex items-center justify-between">
+              <div class="flex items-center space-x-2">
+                <span class="font-bold" id="preview-user-loginname">-</span>
+                <span class="text-slate-500">•</span>
+                <span id="preview-user-name">-</span>
+              </div>
+              <button onclick="clearSelectedOpdUser()" class="text-slate-400 hover:text-slate-700 cursor-pointer"><i data-lucide="x" class="w-3.5 h-3.5"></i></button>
+            </div>
+          </div>
+
+          <!-- Authorized Users Table -->
+          <div class="space-y-3">
+            <div class="flex items-center justify-between">
+              <h4 class="font-bold text-sm text-slate-800 flex items-center space-x-2">
+                <i data-lucide="users" class="w-4 h-4 text-blue-600"></i>
+                <span>รายชื่อผู้ได้รับสิทธิ์เข้าใช้งาน (<span id="setting-users-count">0</span> คน)</span>
+              </h4>
+              <button onclick="fetchAuthorizedUsers()" class="text-xs text-slate-500 hover:text-emerald-700 flex items-center space-x-1 cursor-pointer">
+                <i data-lucide="refresh-cw" class="w-3.5 h-3.5"></i>
+                <span>รีเฟรช</span>
+              </button>
+            </div>
+
+            <div class="border border-slate-200 rounded-2xl overflow-hidden shadow-2xs">
+              <table class="w-full text-xs text-left border-collapse">
+                <thead>
+                  <tr class="bg-slate-100 text-slate-700 font-semibold border-b border-slate-200">
+                    <th class="py-2.5 px-3">#</th>
+                    <th class="py-2.5 px-3">loginname</th>
+                    <th class="py-2.5 px-3">ชื่อ - สกุล</th>
+                    <th class="py-2.5 px-3 text-center">สิทธิ์ (Role)</th>
+                    <th class="py-2.5 px-3 text-center">สถานะ</th>
+                    <th class="py-2.5 px-3">วันที่เพิ่ม</th>
+                    <th class="py-2.5 px-3 text-center">จัดการ</th>
+                  </tr>
+                </thead>
+                <tbody id="setting-users-table-body" class="divide-y divide-slate-100 bg-white">
+                  <!-- dynamic rows -->
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- Footer -->
+      <div class="px-6 py-3 border-t border-slate-200 bg-slate-50 flex justify-between items-center text-xs text-slate-500">
+        <span id="setting-footer-info">ตาราง <code class="font-mono text-slate-700 bg-slate-200 px-1 py-0.5 rounded">d-flow.nhso_exempt_pttypes</code></span>
+        <button onclick="closeSettingsModal()" class="px-4 py-2 bg-slate-200 hover:bg-slate-300 text-slate-700 font-semibold rounded-lg transition cursor-pointer">
+          ปิดหน้าต่าง
+        </button>
+      </div>
+    </div>
+  </div>
+
   <!-- Toast Container -->
   <div id="toast-container" class="fixed bottom-4 right-4 z-50 space-y-2"></div>
 
@@ -518,14 +809,41 @@
     let distinctPttypes = []; // Array of { pttype, pttypename, count }
     let selectedPttypes = new Set(); // Set of selected pttype strings
     const nhsoCache = new Map(); // pid -> nhsoRightData
+    let currentUser = null;
+    let selectedOpdUser = null;
+    let currentOpdSearchResults = [];
+    let searchDebounceTimer = null;
+
+    // Exempt pttype state (สิทธิ์ที่ไม่ต้องบอกว่าตรงกันหรือไม่ตรงกัน)
+    let exemptPttypes = new Set(['9C', '10', '1B', '52']);
+    let selectedHosPttype = null;
+    let currentHosPttypeSearchResults = [];
+    let searchHosPttypeTimer = null;
+    let activeSettingTab = 'exempt';
 
     // Initialize application on load
     document.addEventListener('DOMContentLoaded', async () => {
       lucide.createIcons();
 
+      // Check user authentication
+      const isAuth = await checkAuthStatus();
+      if (!isAuth) {
+        return;
+      }
+
+      await initApp();
+    });
+
+    async function initApp() {
       // Set default date to today or 2026-09-28
-      const today = new Date().toISOString().slice(0, 10);
-      document.getElementById('vstdate').value = today;
+      const vstdateInput = document.getElementById('vstdate');
+      if (vstdateInput && !vstdateInput.value) {
+        const today = new Date().toISOString().slice(0, 10);
+        vstdateInput.value = today;
+      }
+
+      // Load exempt pttypes from DB
+      await loadExemptPttypes();
 
       // Check system health
       checkSystemHealth();
@@ -535,7 +853,7 @@
 
       // Auto fetch default
       fetchVisits();
-    });
+    }
 
     // Check DB and Token health
     async function checkSystemHealth() {
@@ -874,11 +1192,11 @@
         if (currentAuthFilter === 'no_auth' && (hasHosAuth || hasApiAuth)) return false;
         if (currentAuthFilter === 'right_match') {
           const match = checkRightMatch(v);
-          if (!match.checked || !match.isMatch) return false;
+          if (!match.checked || match.isExempt || !match.isMatch) return false;
         }
         if (currentAuthFilter === 'right_mismatch') {
           const match = checkRightMatch(v);
-          if (!match.checked || match.isMatch) return false;
+          if (!match.checked || match.isExempt || match.isMatch) return false;
         }
 
         // Search text
@@ -1157,6 +1475,25 @@
 
       const vpHosPttype = (visit.vp_pttype || '').trim();
 
+      // Check exempt pttype (สิทธิ์ที่ไม่ต้องบอกว่าตรงกันหรือไม่ตรงกัน เช่น 9c, 10, 1B, 52)
+      const hosPttypeUpper = (visit.pttype || '').trim().toUpperCase();
+      const vpHosPttypeUpper = (vpHosPttype || '').trim().toUpperCase();
+      const isExempt = Boolean(exemptPttypes && (exemptPttypes.has(hosPttypeUpper) || (vpHosPttypeUpper && exemptPttypes.has(vpHosPttypeUpper))));
+
+      if (isExempt) {
+        return {
+          checked: true,
+          isMatch: false,
+          isExempt: true,
+          expectedPttypes: [],
+          expectedLabel: 'ยกเว้นการเทียบสิทธิ',
+          hosPttype,
+          apiMain: main,
+          apiSub: sub,
+          hospmain
+        };
+      }
+
       // กรณีอุบัติเหตุ พรบ. 13
       if (hosPttype === '13' || vpHosPttype === '13') {
         expectedPttypes.push('13');
@@ -1167,6 +1504,7 @@
       return {
         checked: true,
         isMatch,
+        isExempt: false,
         expectedPttypes,
         expectedLabel,
         hosPttype,
@@ -1184,6 +1522,16 @@
 
       if (!match.checked) {
         return `<span class="text-slate-400 text-xs italic font-mono" title="ยังไม่ได้ตรวจสอบสิทธิ์ API">-</span>`;
+      }
+
+      if (match.isExempt) {
+        return `
+          <div class="inline-flex items-center justify-center">
+            <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-slate-100 text-slate-600 border border-slate-200 shadow-2xs" title="สิทธินี้ (${visit.pttype}) ยกเว้นการบอกความตรงกัน">
+              <i data-lucide="minus" class="w-3.5 h-3.5 mr-1 text-slate-400"></i>ไม่ต้องเทียบ
+            </span>
+          </div>
+        `;
       }
 
       if (match.isMatch) {
@@ -1335,7 +1683,7 @@
     function renderHosSyncActionCell(v) {
       const match = checkRightMatch(v);
       const hasHosAuth = Boolean(v.auth_code && v.auth_code.trim());
-      const isComplete = match.checked && match.isMatch && hasHosAuth;
+      const isComplete = match.checked && (match.isMatch || match.isExempt) && hasHosAuth;
 
       if (isComplete) {
         return `
@@ -2287,11 +2635,13 @@
                     <div class="text-xs text-slate-500 mt-0.5">${d.subinscl_name ? `(${d.subinscl_name})` : ''} รหัส: ${d.maininscl_id || '-'} / ${d.subinscl_id || '-'}</div>
                   </td>
                   <td class="py-3.5 px-4 text-center">
-                    ${rightMatch.isMatch 
-                      ? `<span class="px-2.5 py-1 bg-emerald-100 text-emerald-800 border border-emerald-300 rounded-lg font-bold text-xs inline-flex items-center"><i data-lucide="check" class="w-3.5 h-3.5 mr-1 text-emerald-600 stroke-[3]"></i>✓ ตรงกัน</span>` 
-                      : (rightMatch.checked 
-                          ? `<span class="px-2.5 py-1 bg-rose-100 text-rose-800 border border-rose-300 rounded-lg text-xs font-semibold inline-flex items-center" title="API แนะนำ: ${rightMatch.expectedLabel}"><i data-lucide="x" class="w-3.5 h-3.5 mr-1 text-rose-600"></i>ไม่ตรง (${rightMatch.expectedPttypes[0] || '?'})</span>` 
-                          : `<span class="text-slate-400">-</span>`)}
+                    ${rightMatch.isExempt
+                      ? `<span class="px-2.5 py-1 bg-slate-100 text-slate-600 border border-slate-200 rounded-lg text-xs font-medium inline-flex items-center"><i data-lucide="minus" class="w-3.5 h-3.5 mr-1 text-slate-400"></i>ไม่ต้องเทียบสิทธิ</span>`
+                      : rightMatch.isMatch 
+                        ? `<span class="px-2.5 py-1 bg-emerald-100 text-emerald-800 border border-emerald-300 rounded-lg font-bold text-xs inline-flex items-center"><i data-lucide="check" class="w-3.5 h-3.5 mr-1 text-emerald-600 stroke-[3]"></i>✓ ตรงกัน</span>` 
+                        : (rightMatch.checked 
+                            ? `<span class="px-2.5 py-1 bg-rose-100 text-rose-800 border border-rose-300 rounded-lg text-xs font-semibold inline-flex items-center" title="API แนะนำ: ${rightMatch.expectedLabel}"><i data-lucide="x" class="w-3.5 h-3.5 mr-1 text-rose-600"></i>ไม่ตรง (${rightMatch.expectedPttypes[0] || '?'})</span>` 
+                            : `<span class="text-slate-400">-</span>`)}
                   </td>
                 </tr>
                 <tr class="hover:bg-slate-50/60 transition">
@@ -2962,6 +3312,625 @@
         setTimeout(() => toast.remove(), 300);
       }, 3500);
     }
+
+    // ==========================================
+    // Authentication & User Management Logic
+    // ==========================================
+
+    async function checkAuthStatus() {
+      try {
+        const res = await fetch('/api/auth/me');
+        if (!res.ok) {
+          currentUser = null;
+          document.getElementById('login-modal').classList.remove('hidden');
+          document.getElementById('user-profile-menu').classList.add('hidden');
+          return false;
+        }
+        const data = await res.json();
+        if (data.success && data.user) {
+          currentUser = data.user;
+          document.getElementById('login-modal').classList.add('hidden');
+          updateUserProfileUI();
+          return true;
+        } else {
+          currentUser = null;
+          document.getElementById('login-modal').classList.remove('hidden');
+          document.getElementById('user-profile-menu').classList.add('hidden');
+          return false;
+        }
+      } catch (err) {
+        console.error('Check auth error:', err);
+        currentUser = null;
+        document.getElementById('login-modal').classList.remove('hidden');
+        document.getElementById('user-profile-menu').classList.add('hidden');
+        return false;
+      }
+    }
+
+    function updateUserProfileUI() {
+      if (!currentUser) return;
+      const profileMenu = document.getElementById('user-profile-menu');
+      const avatarEl = document.getElementById('user-avatar-initial');
+      const nameEl = document.getElementById('user-display-name');
+      const roleEl = document.getElementById('user-role-badge');
+      const btnSettings = document.getElementById('btn-open-settings');
+
+      if (profileMenu) profileMenu.classList.remove('hidden');
+      const initial = (currentUser.name || currentUser.loginname || 'U').charAt(0).toUpperCase();
+      if (avatarEl) avatarEl.textContent = initial;
+      if (nameEl) nameEl.textContent = currentUser.name || currentUser.loginname;
+      if (roleEl) {
+        const isAdmin = currentUser.role === 'admin';
+        roleEl.textContent = isAdmin ? 'Admin' : 'User';
+        roleEl.className = isAdmin
+          ? 'px-1.5 py-0.2 rounded-full text-[10px] font-bold bg-amber-100 text-amber-800'
+          : 'px-1.5 py-0.2 rounded-full text-[10px] font-bold bg-slate-200 text-slate-700';
+      }
+
+      if (btnSettings) {
+        if (currentUser.role === 'admin') {
+          btnSettings.classList.remove('hidden');
+        } else {
+          btnSettings.classList.add('hidden');
+        }
+      }
+      lucide.createIcons();
+    }
+
+    async function handleLoginSubmit(event) {
+      event.preventDefault();
+      const loginnameInput = document.getElementById('login-username');
+      const passwordInput = document.getElementById('login-password');
+      const errorAlert = document.getElementById('login-error-alert');
+      const errorText = document.getElementById('login-error-text');
+      const btnSubmit = document.getElementById('btn-login-submit');
+
+      const loginname = loginnameInput.value.trim();
+      const password = passwordInput.value;
+
+      if (!loginname || !password) return;
+
+      errorAlert.classList.add('hidden');
+      btnSubmit.disabled = true;
+      btnSubmit.innerHTML = `<span class="inline-block animate-spin mr-1.5">⏳</span><span>กำลังเข้าสู่ระบบ...</span>`;
+
+      try {
+        const res = await fetch('/api/auth/login', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ loginname, password })
+        });
+        const data = await res.json();
+
+        if (data.success && (data.user || data.data?.user)) {
+          currentUser = data.user || data.data?.user;
+          document.getElementById('login-modal').classList.add('hidden');
+          passwordInput.value = '';
+          updateUserProfileUI();
+          showToast(`ยินดีต้อนรับ ${currentUser.name || currentUser.loginname}`, 'success');
+
+          // Initialize application
+          await initApp();
+        } else {
+          errorText.textContent = data.message || 'ชื่อผู้ใช้งานหรือรหัสผ่านไม่ถูกต้อง';
+          errorAlert.classList.remove('hidden');
+        }
+      } catch (err) {
+        console.error('Login error:', err);
+        errorText.textContent = 'เกิดข้อผิดพลาดในการเชื่อมต่อเซิร์ฟเวอร์';
+        errorAlert.classList.remove('hidden');
+      } finally {
+        btnSubmit.disabled = false;
+        btnSubmit.innerHTML = `<i data-lucide="log-in" class="w-4 h-4"></i><span>เข้าสู่ระบบ</span>`;
+        lucide.createIcons();
+      }
+    }
+
+    async function handleLogout() {
+      if (!confirm('ต้องการออกจากระบบใช่หรือไม่?')) return;
+      try {
+        await fetch('/api/auth/logout', { method: 'POST' });
+      } catch (err) {
+        console.error('Logout error:', err);
+      }
+      currentUser = null;
+      document.getElementById('user-profile-menu').classList.add('hidden');
+      document.getElementById('login-modal').classList.remove('hidden');
+      const passInput = document.getElementById('login-password');
+      if (passInput) passInput.value = '';
+      showToast('ออกจากระบบเรียบร้อย', 'info');
+      lucide.createIcons();
+    }
+
+    async function loadExemptPttypes() {
+      try {
+        const res = await fetch('/api/exempt-pttypes?active=true');
+        const data = await res.json();
+        if (data.success && Array.isArray(data.data)) {
+          exemptPttypes = new Set(data.data.map(d => String(d.pttype || '').trim().toUpperCase()));
+        }
+      } catch (err) {
+        console.error('Failed to load exempt pttypes:', err);
+      }
+    }
+
+    function switchSettingTab(tab) {
+      activeSettingTab = tab;
+      const tabExemptBtn = document.getElementById('setting-tab-btn-exempt');
+      const tabUsersBtn = document.getElementById('setting-tab-btn-users');
+      const sectionExempt = document.getElementById('setting-section-exempt');
+      const sectionUsers = document.getElementById('setting-section-users');
+      const footerInfo = document.getElementById('setting-footer-info');
+
+      if (tab === 'exempt') {
+        if (tabExemptBtn) tabExemptBtn.className = 'px-3.5 py-1.5 font-bold text-xs rounded-xl bg-emerald-600 text-white shadow-xs transition flex items-center space-x-1.5 cursor-pointer';
+        if (tabUsersBtn) tabUsersBtn.className = 'px-3.5 py-1.5 font-semibold text-xs rounded-xl text-slate-600 hover:text-slate-900 hover:bg-slate-200 transition flex items-center space-x-1.5 cursor-pointer';
+        if (sectionExempt) sectionExempt.classList.remove('hidden');
+        if (sectionUsers) sectionUsers.classList.add('hidden');
+        if (footerInfo) footerInfo.innerHTML = `ตาราง <code class="font-mono text-slate-700 bg-slate-200 px-1 py-0.5 rounded">d-flow.nhso_exempt_pttypes</code>`;
+        fetchExemptPttypes();
+      } else {
+        if (tabUsersBtn) tabUsersBtn.className = 'px-3.5 py-1.5 font-bold text-xs rounded-xl bg-emerald-600 text-white shadow-xs transition flex items-center space-x-1.5 cursor-pointer';
+        if (tabExemptBtn) tabExemptBtn.className = 'px-3.5 py-1.5 font-semibold text-xs rounded-xl text-slate-600 hover:text-slate-900 hover:bg-slate-200 transition flex items-center space-x-1.5 cursor-pointer';
+        if (sectionUsers) sectionUsers.classList.remove('hidden');
+        if (sectionExempt) sectionExempt.classList.add('hidden');
+        if (footerInfo) footerInfo.innerHTML = `ตาราง <code class="font-mono text-slate-700 bg-slate-200 px-1 py-0.5 rounded">d-flow.nhso_auth_users</code>`;
+        fetchAuthorizedUsers();
+      }
+      lucide.createIcons();
+    }
+
+    function openSettingsModal() {
+      if (!currentUser || currentUser.role !== 'admin') {
+        showToast('เฉพาะผู้ดูแลระบบ (Admin) เท่านั้นที่สามารถเข้าถึงการตั้งค่าได้', 'error');
+        return;
+      }
+      const modal = document.getElementById('settings-modal');
+      modal.classList.remove('hidden');
+      switchSettingTab(activeSettingTab || 'exempt');
+      lucide.createIcons();
+    }
+
+    function closeSettingsModal() {
+      const modal = document.getElementById('settings-modal');
+      modal.classList.add('hidden');
+      clearSelectedOpdUser();
+      clearSelectedHosPttype();
+    }
+
+    async function fetchAuthorizedUsers() {
+      const tbody = document.getElementById('setting-users-table-body');
+      const countEl = document.getElementById('setting-users-count');
+      tbody.innerHTML = `<tr><td colspan="7" class="text-center py-6 text-slate-400">กำลังโหลดรายชื่อผู้ใช้งาน...</td></tr>`;
+
+      try {
+        const res = await fetch('/api/auth/users');
+        const data = await res.json();
+        if (data.success) {
+          const users = data.data || [];
+          countEl.textContent = users.length;
+
+          if (users.length === 0) {
+            tbody.innerHTML = `<tr><td colspan="7" class="text-center py-6 text-slate-400">ยังไม่มีผู้ได้รับสิทธิ์ในระบบ</td></tr>`;
+            return;
+          }
+
+          tbody.innerHTML = users.map((u, idx) => {
+            const roleBadge = u.role === 'admin'
+              ? `<span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-100 text-amber-800">Admin</span>`
+              : `<span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-slate-100 text-slate-700">User</span>`;
+
+            const isActive = Number(u.is_active) === 1;
+            const statusBadge = isActive
+              ? `<span class="px-2 py-0.5 rounded-full text-[10px] font-semibold bg-emerald-100 text-emerald-800 flex items-center justify-center space-x-1 w-fit mx-auto"><span class="w-1.5 h-1.5 rounded-full bg-emerald-600"></span><span>เปิดใช้งาน</span></span>`
+              : `<span class="px-2 py-0.5 rounded-full text-[10px] font-semibold bg-rose-100 text-rose-800 flex items-center justify-center space-x-1 w-fit mx-auto"><span class="w-1.5 h-1.5 rounded-full bg-rose-600"></span><span>ระงับสิทธิ์</span></span>`;
+
+            const dateStr = u.created_at ? new Date(u.created_at).toLocaleString('th-TH') : '-';
+            const isSelf = currentUser && currentUser.loginname === u.loginname;
+
+            return `
+              <tr class="hover:bg-slate-50 transition border-b border-slate-100">
+                <td class="py-2.5 px-3 text-slate-400 font-mono">${idx + 1}</td>
+                <td class="py-2.5 px-3 font-semibold text-slate-800 font-mono">${escapeHtml(u.loginname)}</td>
+                <td class="py-2.5 px-3 text-slate-700">${escapeHtml(u.name || '-')}</td>
+                <td class="py-2.5 px-3 text-center">${roleBadge}</td>
+                <td class="py-2.5 px-3 text-center">${statusBadge}</td>
+                <td class="py-2.5 px-3 text-slate-500 text-[11px]">${dateStr}</td>
+                <td class="py-2.5 px-3 text-center">
+                  <div class="flex items-center justify-center space-x-1">
+                    <button onclick="toggleUserStatus(${u.id}, ${u.is_active})" title="${isActive ? 'ระงับสิทธิ์' : 'เปิดใช้งาน'}" class="p-1 rounded hover:bg-slate-200 text-slate-600 cursor-pointer">
+                      <i data-lucide="${isActive ? 'pause-circle' : 'play-circle'}" class="w-4 h-4 ${isActive ? 'text-amber-600' : 'text-emerald-600'}"></i>
+                    </button>
+                    ${!isSelf ? `
+                    <button onclick="deleteAuthorizedUser(${u.id}, '${escapeHtml(u.loginname)}')" title="ลบผู้ใช้งาน" class="p-1 rounded hover:bg-rose-100 text-rose-600 cursor-pointer">
+                      <i data-lucide="trash-2" class="w-4 h-4"></i>
+                    </button>
+                    ` : `
+                    <span class="p-1 text-slate-300" title="ไม่สามารถลบบัญชีของตัวเองได้"><i data-lucide="lock" class="w-4 h-4"></i></span>
+                    `}
+                  </div>
+                </td>
+              </tr>
+            `;
+          }).join('');
+          lucide.createIcons();
+        } else {
+          tbody.innerHTML = `<tr><td colspan="7" class="text-center py-6 text-rose-500">โหลดข้อมูลไม่สำเร็จ: ${escapeHtml(data.message)}</td></tr>`;
+        }
+      } catch (err) {
+        console.error('Error fetching authorized users:', err);
+        tbody.innerHTML = `<tr><td colspan="7" class="text-center py-6 text-rose-500">เกิดข้อผิดพลาดในการโหลดข้อมูล</td></tr>`;
+      }
+    }
+
+    function debounceSearchOpdUser() {
+      clearTimeout(searchDebounceTimer);
+      searchDebounceTimer = setTimeout(async () => {
+        const q = document.getElementById('setting-search-opduser').value.trim();
+        const dropdown = document.getElementById('setting-opduser-dropdown');
+        if (q.length < 1) {
+          dropdown.classList.add('hidden');
+          dropdown.innerHTML = '';
+          currentOpdSearchResults = [];
+          return;
+        }
+
+        try {
+          const res = await fetch('/api/auth/search-opdusers?q=' + encodeURIComponent(q));
+          const data = await res.json();
+          if (data.success && data.data?.length > 0) {
+            currentOpdSearchResults = data.data;
+            dropdown.innerHTML = currentOpdSearchResults.map((u, idx) => `
+              <div onclick="selectOpdUserByIndex(${idx})" class="p-2 hover:bg-emerald-50 cursor-pointer rounded-lg flex items-center justify-between transition">
+                <div class="flex items-center space-x-2">
+                  <span class="font-mono font-bold text-slate-800 text-xs">${escapeHtml(u.loginname)}</span>
+                  <span class="text-slate-600 text-xs">${escapeHtml(u.name || '')}</span>
+                </div>
+                <span class="text-[10px] text-emerald-600 font-semibold">+ เลือก</span>
+              </div>
+            `).join('');
+            dropdown.classList.remove('hidden');
+          } else {
+            currentOpdSearchResults = [];
+            dropdown.innerHTML = `<div class="p-3 text-center text-slate-400 text-xs">ไม่พบผู้ใช้ที่ตรงกับ "${escapeHtml(q)}" ใน HOSxP</div>`;
+            dropdown.classList.remove('hidden');
+          }
+        } catch (err) {
+          console.error('Search opduser error:', err);
+        }
+      }, 300);
+    }
+
+    function selectOpdUserByIndex(idx) {
+      const user = currentOpdSearchResults[idx];
+      if (!user) return;
+      selectedOpdUser = user;
+      document.getElementById('setting-opduser-dropdown').classList.add('hidden');
+      document.getElementById('setting-search-opduser').value = user.loginname;
+      document.getElementById('preview-user-loginname').textContent = user.loginname;
+      document.getElementById('preview-user-name').textContent = user.name || '-';
+      document.getElementById('selected-opduser-preview').classList.remove('hidden');
+      lucide.createIcons();
+    }
+
+    function clearSelectedOpdUser() {
+      selectedOpdUser = null;
+      const searchInput = document.getElementById('setting-search-opduser');
+      if (searchInput) searchInput.value = '';
+      const previewEl = document.getElementById('selected-opduser-preview');
+      if (previewEl) previewEl.classList.add('hidden');
+      const dropdown = document.getElementById('setting-opduser-dropdown');
+      if (dropdown) dropdown.classList.add('hidden');
+    }
+
+    async function submitAddAuthorizedUser() {
+      if (!selectedOpdUser) {
+        showToast('กรุณาค้นหาและเลือกผู้ใช้งานจาก HOSxP ก่อน', 'error');
+        return;
+      }
+      const role = document.getElementById('setting-user-role').value;
+      const btn = document.getElementById('btn-submit-add-user');
+      btn.disabled = true;
+
+      try {
+        const res = await fetch('/api/auth/users', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            loginname: selectedOpdUser.loginname,
+            name: selectedOpdUser.name,
+            role
+          })
+        });
+        const data = await res.json();
+        if (data.success) {
+          showToast(`เพิ่มสิทธิ์ผู้ใช้งาน ${selectedOpdUser.loginname} เรียบร้อยแล้ว`, 'success');
+          clearSelectedOpdUser();
+          fetchAuthorizedUsers();
+        } else {
+          showToast(`เพิ่มผู้ใช้งานไม่สำเร็จ: ${data.message}`, 'error');
+        }
+      } catch (err) {
+        console.error('Add user error:', err);
+        showToast('เกิดข้อผิดพลาดในการเพิ่มผู้ใช้งาน', 'error');
+      } finally {
+        btn.disabled = false;
+      }
+    }
+
+    async function toggleUserStatus(id, currentStatus) {
+      const newStatus = Number(currentStatus) === 1 ? 0 : 1;
+      try {
+        const res = await fetch(`/api/auth/users/${id}`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ is_active: newStatus })
+        });
+        const data = await res.json();
+        if (data.success) {
+          showToast(newStatus === 1 ? 'เปิดใช้งานผู้ใช้เรียบร้อย' : 'ระงับสิทธิ์ผู้ใช้เรียบร้อย', 'info');
+          fetchAuthorizedUsers();
+        } else {
+          showToast(`ปรับปรุงสถานะไม่สำเร็จ: ${data.message}`, 'error');
+        }
+      } catch (err) {
+        console.error('Toggle user status error:', err);
+        showToast('เกิดข้อผิดพลาดในการเปลี่ยนสถานะ', 'error');
+      }
+    }
+
+    async function deleteAuthorizedUser(id, loginname) {
+      if (!confirm(`คุณแน่ใจหรือไม่ว่าต้องการลบสิทธิ์ผู้ใช้ "${loginname}" ออกจากระบบ?`)) {
+        return;
+      }
+      try {
+        const res = await fetch(`/api/auth/users/${id}`, {
+          method: 'DELETE'
+        });
+        const data = await res.json();
+        if (data.success) {
+          showToast(`ลบสิทธิ์ผู้ใช้ "${loginname}" เรียบร้อยแล้ว`, 'success');
+          fetchAuthorizedUsers();
+        } else {
+          showToast(`ลบผู้ใช้ไม่สำเร็จ: ${data.message}`, 'error');
+        }
+      } catch (err) {
+        console.error('Delete user error:', err);
+        showToast('เกิดข้อผิดพลาดในการลบผู้ใช้', 'error');
+      }
+    }
+
+    // ==========================================
+    // Exempt Pttypes (สิทธิ์ที่ไม่ต้องบอกว่าตรงกันหรือไม่)
+    // ==========================================
+
+    async function fetchExemptPttypes() {
+      const tbody = document.getElementById('setting-exempt-table-body');
+      const countEl = document.getElementById('setting-exempt-count');
+      const tabCountEl = document.getElementById('setting-exempt-tab-count');
+      if (!tbody) return;
+
+      tbody.innerHTML = `<tr><td colspan="7" class="text-center py-6 text-slate-400">กำลังโหลดรายการสิทธิที่ยกเว้น...</td></tr>`;
+
+      try {
+        const res = await fetch('/api/exempt-pttypes');
+        const data = await res.json();
+        if (data.success) {
+          const items = data.data || [];
+          if (countEl) countEl.textContent = items.length;
+          if (tabCountEl) tabCountEl.textContent = items.length;
+
+          // Update active set
+          exemptPttypes = new Set(items.filter(i => Number(i.is_active) === 1).map(i => String(i.pttype).trim().toUpperCase()));
+
+          if (items.length === 0) {
+            tbody.innerHTML = `<tr><td colspan="7" class="text-center py-6 text-slate-400">ยังไม่มีสิทธิที่ยกเว้นการเทียบความตรงกัน</td></tr>`;
+            return;
+          }
+
+          tbody.innerHTML = items.map((item, idx) => {
+            const isActive = Number(item.is_active) === 1;
+            const statusBadge = isActive
+              ? `<span class="px-2 py-0.5 rounded-full text-[10px] font-semibold bg-emerald-100 text-emerald-800 flex items-center justify-center space-x-1 w-fit mx-auto"><span class="w-1.5 h-1.5 rounded-full bg-emerald-600"></span><span>เปิดใช้งาน</span></span>`
+              : `<span class="px-2 py-0.5 rounded-full text-[10px] font-semibold bg-slate-200 text-slate-600 flex items-center justify-center space-x-1 w-fit mx-auto"><span class="w-1.5 h-1.5 rounded-full bg-slate-500"></span><span>ปิดใช้งาน</span></span>`;
+
+            const dateStr = item.created_at ? new Date(item.created_at).toLocaleDateString('th-TH') : '-';
+
+            return `
+              <tr class="hover:bg-slate-50 transition border-b border-slate-100">
+                <td class="py-2.5 px-3 text-slate-400 font-mono">${idx + 1}</td>
+                <td class="py-2.5 px-3">
+                  <span class="font-mono font-bold px-2 py-0.5 rounded bg-amber-50 text-amber-800 border border-amber-200 text-xs">${escapeHtml(item.pttype)}</span>
+                </td>
+                <td class="py-2.5 px-3 font-medium text-slate-800">${escapeHtml(item.name || '-')}</td>
+                <td class="py-2.5 px-3 text-slate-500 text-xs">${escapeHtml(item.note || '-')}</td>
+                <td class="py-2.5 px-3 text-center">${statusBadge}</td>
+                <td class="py-2.5 px-3 text-slate-400 text-[11px]">${dateStr}</td>
+                <td class="py-2.5 px-3 text-center">
+                  <div class="flex items-center justify-center space-x-1">
+                    <button onclick="toggleExemptStatus(${item.id}, ${item.is_active})" title="${isActive ? 'ปิดการยกเว้น' : 'เปิดการยกเว้น'}" class="p-1 rounded hover:bg-slate-200 text-slate-600 cursor-pointer">
+                      <i data-lucide="${isActive ? 'pause-circle' : 'play-circle'}" class="w-4 h-4 ${isActive ? 'text-amber-600' : 'text-emerald-600'}"></i>
+                    </button>
+                    <button onclick="deleteExemptPttype(${item.id}, '${escapeHtml(item.pttype)}')" title="ลบออกจากรายการยกเว้น" class="p-1 rounded hover:bg-rose-100 text-rose-600 cursor-pointer">
+                      <i data-lucide="trash-2" class="w-4 h-4"></i>
+                    </button>
+                  </div>
+                </td>
+              </tr>
+            `;
+          }).join('');
+          lucide.createIcons();
+        } else {
+          tbody.innerHTML = `<tr><td colspan="7" class="text-center py-6 text-rose-500">โหลดข้อมูลไม่สำเร็จ: ${escapeHtml(data.message)}</td></tr>`;
+        }
+      } catch (err) {
+        console.error('Error fetching exempt pttypes:', err);
+        tbody.innerHTML = `<tr><td colspan="7" class="text-center py-6 text-rose-500">เกิดข้อผิดพลาดในการโหลดข้อมูล</td></tr>`;
+      }
+    }
+
+    function debounceSearchHosPttype() {
+      clearTimeout(searchHosPttypeTimer);
+      searchHosPttypeTimer = setTimeout(async () => {
+        const q = document.getElementById('setting-search-pttype').value.trim();
+        const dropdown = document.getElementById('setting-pttype-dropdown');
+        if (q.length < 1) {
+          dropdown.classList.add('hidden');
+          dropdown.innerHTML = '';
+          currentHosPttypeSearchResults = [];
+          return;
+        }
+
+        try {
+          const res = await fetch('/api/exempt-pttypes/search?q=' + encodeURIComponent(q));
+          const data = await res.json();
+          if (data.success && data.data?.length > 0) {
+            currentHosPttypeSearchResults = data.data;
+            dropdown.innerHTML = currentHosPttypeSearchResults.map((p, idx) => `
+              <div onclick="selectHosPttypeByIndex(${idx})" class="p-2 hover:bg-emerald-50 cursor-pointer rounded-lg flex items-center justify-between transition">
+                <div class="flex items-center space-x-2">
+                  <span class="font-mono font-bold text-slate-800 text-xs bg-slate-100 px-1.5 py-0.5 rounded">${escapeHtml(p.pttype)}</span>
+                  <span class="text-slate-700 text-xs">${escapeHtml(p.name || '')}</span>
+                </div>
+                <span class="text-[10px] text-emerald-600 font-semibold">+ เลือก</span>
+              </div>
+            `).join('');
+            dropdown.classList.remove('hidden');
+          } else {
+            currentHosPttypeSearchResults = [];
+            dropdown.innerHTML = `<div class="p-3 text-center text-slate-400 text-xs">ไม่พบรหัสสิทธิที่ตรงกับ "${escapeHtml(q)}" ใน HOSxP</div>`;
+            dropdown.classList.remove('hidden');
+          }
+        } catch (err) {
+          console.error('Search HOSxP pttype error:', err);
+        }
+      }, 300);
+    }
+
+    function selectHosPttypeByIndex(idx) {
+      const p = currentHosPttypeSearchResults[idx];
+      if (!p) return;
+      selectedHosPttype = p;
+      document.getElementById('setting-pttype-dropdown').classList.add('hidden');
+      document.getElementById('setting-search-pttype').value = p.pttype;
+      document.getElementById('preview-pttype-code').textContent = p.pttype;
+      document.getElementById('preview-pttype-name').textContent = p.name || '-';
+      document.getElementById('selected-pttype-preview').classList.remove('hidden');
+      lucide.createIcons();
+    }
+
+    function clearSelectedHosPttype() {
+      selectedHosPttype = null;
+      const searchInput = document.getElementById('setting-search-pttype');
+      if (searchInput) searchInput.value = '';
+      const previewEl = document.getElementById('selected-pttype-preview');
+      if (previewEl) previewEl.classList.add('hidden');
+      const dropdown = document.getElementById('setting-pttype-dropdown');
+      if (dropdown) dropdown.classList.add('hidden');
+    }
+
+    async function submitAddExemptPttype() {
+      if (!selectedHosPttype) {
+        const manualCode = document.getElementById('setting-search-pttype').value.trim();
+        if (manualCode) {
+          selectedHosPttype = { pttype: manualCode, name: manualCode };
+        } else {
+          showToast('กรุณาระบุหรือเลือกรหัสสิทธิ (pttype) ก่อน', 'error');
+          return;
+        }
+      }
+
+      const noteInput = document.getElementById('setting-exempt-note');
+      const note = noteInput ? noteInput.value.trim() : '';
+      const btn = document.getElementById('btn-submit-add-exempt');
+      if (btn) btn.disabled = true;
+
+      try {
+        const res = await fetch('/api/exempt-pttypes', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            pttype: selectedHosPttype.pttype,
+            name: selectedHosPttype.name,
+            note
+          })
+        });
+        const data = await res.json();
+        if (data.success) {
+          showToast(`เพิ่มสิทธิยกเว้น '${selectedHosPttype.pttype}' เรียบร้อยแล้ว`, 'success');
+          clearSelectedHosPttype();
+          if (noteInput) noteInput.value = '';
+          await fetchExemptPttypes();
+          applyClientFilter();
+        } else {
+          showToast(`เพิ่มสิทธิไม่สำเร็จ: ${data.message}`, 'error');
+        }
+      } catch (err) {
+        console.error('Add exempt pttype error:', err);
+        showToast('เกิดข้อผิดพลาดในการเพิ่มสิทธิยกเว้น', 'error');
+      } finally {
+        if (btn) btn.disabled = false;
+      }
+    }
+
+    async function toggleExemptStatus(id, currentStatus) {
+      const newStatus = Number(currentStatus) === 1 ? 0 : 1;
+      try {
+        const res = await fetch(`/api/exempt-pttypes/${id}`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ is_active: newStatus })
+        });
+        const data = await res.json();
+        if (data.success) {
+          showToast(newStatus === 1 ? 'เปิดใช้งานสิทธิยกเว้นเรียบร้อย' : 'ระงับสิทธิยกเว้นเรียบร้อย', 'info');
+          await fetchExemptPttypes();
+          applyClientFilter();
+        } else {
+          showToast(`ปรับปรุงไม่สำเร็จ: ${data.message}`, 'error');
+        }
+      } catch (err) {
+        console.error('Toggle exempt status error:', err);
+        showToast('เกิดข้อผิดพลาดในการเปลี่ยนสถานะ', 'error');
+      }
+    }
+
+    async function deleteExemptPttype(id, pttype) {
+      if (!confirm(`คุณแน่ใจหรือไม่ว่าต้องการลบสิทธิยกเว้น "${pttype}" ออกจากระบบ?`)) {
+        return;
+      }
+      try {
+        const res = await fetch(`/api/exempt-pttypes/${id}`, {
+          method: 'DELETE'
+        });
+        const data = await res.json();
+        if (data.success) {
+          showToast(`ลบสิทธิยกเว้น "${pttype}" เรียบร้อยแล้ว`, 'success');
+          await fetchExemptPttypes();
+          applyClientFilter();
+        } else {
+          showToast(`ลบสิทธิไม่สำเร็จ: ${data.message}`, 'error');
+        }
+      } catch (err) {
+        console.error('Delete exempt pttype error:', err);
+        showToast('เกิดข้อผิดพลาดในการลบสิทธิยกเว้น', 'error');
+      }
+    }
+
+    // Close dropdowns when clicking outside
+    document.addEventListener('click', (e) => {
+      const opdDropdown = document.getElementById('setting-opduser-dropdown');
+      const opdSearchInput = document.getElementById('setting-search-opduser');
+      if (opdDropdown && !opdDropdown.contains(e.target) && e.target !== opdSearchInput) {
+        opdDropdown.classList.add('hidden');
+      }
+
+      const pttypeDropdown = document.getElementById('setting-pttype-dropdown');
+      const pttypeSearchInput = document.getElementById('setting-search-pttype');
+      if (pttypeDropdown && !pttypeDropdown.contains(e.target) && e.target !== pttypeSearchInput) {
+        pttypeDropdown.classList.add('hidden');
+      }
+    });
   </script>
 </body>
 </html>
