@@ -376,7 +376,10 @@
           </button>
         </div>
       </div>
-    <!-- Client Agent Status Modal -->
+    </div>
+  </div>
+
+  <!-- Client Agent Status Modal -->
   <div id="agent-modal" class="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-50 hidden flex items-center justify-center p-3 sm:p-4">
     <div class="bg-white rounded-2xl shadow-2xl max-w-4xl w-full max-h-[90vh] flex flex-col border border-slate-200 overflow-hidden">
       <!-- Modal Header -->
@@ -2483,7 +2486,8 @@
           const list = res.data || [];
           const activeCount = list.filter(c => c.status === 'ACTIVE').length;
           
-          if (badge && badgeText) {
+          if (badge) {
+            badge.onclick = openAgentModal;
             if (activeCount > 0) {
               badge.className = 'flex items-center space-x-1.5 px-2.5 py-1 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-300 hover:bg-emerald-100 transition cursor-pointer shadow-xs';
               badge.innerHTML = `<span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span><span id="agent-badge-text">Agent: ออนไลน์ ${activeCount} เครื่อง</span>`;
