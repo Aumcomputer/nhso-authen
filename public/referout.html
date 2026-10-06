@@ -343,7 +343,7 @@
 
   <!-- HOSxP Sync Confirmation Modal -->
   <div id="hos-sync-confirm-modal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-xs z-50 hidden flex items-center justify-center p-3 sm:p-4">
-    <div class="bg-white rounded-2xl shadow-2xl max-w-2xl w-full border border-slate-200 overflow-hidden flex flex-col">
+    <div class="bg-white rounded-2xl shadow-2xl max-w-4xl w-full border border-slate-200 overflow-hidden flex flex-col">
       <!-- Modal Header -->
       <div class="px-6 py-4 bg-gradient-to-r from-emerald-600 to-teal-700 text-white flex items-center justify-between">
         <div class="flex items-center space-x-3">
@@ -1906,7 +1906,10 @@
       const btnConfirm = document.getElementById('btn-confirm-save-hos');
 
       modal.classList.remove('hidden');
-      if (btnConfirm) btnConfirm.disabled = true;
+      if (btnConfirm) {
+        btnConfirm.disabled = true;
+        btnConfirm.innerHTML = '<i data-lucide="check" class="w-4 h-4"></i><span>ยืนยันบันทึกลง HOSxP</span>';
+      }
 
       body.innerHTML = `
         <div class="text-center py-10 text-slate-400">
@@ -1929,45 +1932,91 @@
             <div class="p-3 bg-slate-50 rounded-xl border border-slate-200 flex justify-between items-center">
               <div>
                 <span class="text-slate-400 text-[11px] block">ผู้ป่วย / VN</span>
-                <span class="font-bold text-slate-800 text-sm">${res.data.ptname || '-'}</span>
-                <span class="font-mono text-slate-500 text-xs ml-2">(HN: ${res.data.hn || '-'} | VN: ${res.data.vn})</span>
+                <span class="font-bold text-slate-800 text-sm">${escapeHtml(res.data.ptname || '-')}</span>
+                <span class="font-mono text-slate-500 text-xs ml-2">(HN: ${escapeHtml(res.data.hn || '-')} | VN: ${escapeHtml(res.data.vn)})</span>
               </div>
+              <span class="px-2.5 py-1 bg-emerald-100 text-emerald-800 border border-emerald-300 rounded-full text-xs font-semibold">
+                พร้อมบันทึก
+              </span>
             </div>
 
             <div class="border border-slate-200 rounded-xl overflow-hidden shadow-2xs">
               <table class="w-full text-xs text-left border-collapse">
                 <thead>
                   <tr class="bg-slate-100 text-slate-700 font-semibold border-b border-slate-200">
-                    <th class="py-2.5 px-3">ฟิลด์ข้อมูล</th>
-                    <th class="py-2.5 px-3 text-slate-500">ค่าเดิมใน HOSxP</th>
-                    <th class="py-2.5 px-3 text-emerald-700 font-bold">ค่าใหม่ที่จะบันทึก</th>
+                    <th class="py-2.5 px-3 w-1/5">ฟิลด์ข้อมูล</th>
+                    <th class="py-2.5 px-3 w-1/4 text-emerald-900 bg-emerald-50/60">
+                      <div class="flex items-center space-x-1">
+                        <span class="px-1.5 py-0.5 rounded text-[10px] bg-emerald-200 text-emerald-900 font-mono font-bold">ovst</span>
+                        <span>ค่าเดิมใน HOSxP</span>
+                      </div>
+                    </th>
+                    <th class="py-2.5 px-3 w-1/4 text-indigo-900 bg-indigo-50/60">
+                      <div class="flex items-center space-x-1">
+                        <span class="px-1.5 py-0.5 rounded text-[10px] bg-indigo-200 text-indigo-900 font-mono font-bold">visit_pttype</span>
+                        <span>ค่าเดิมใน HOSxP</span>
+                      </div>
+                    </th>
+                    <th class="py-2.5 px-3 w-3/10 text-emerald-900 bg-emerald-100/70 font-bold">
+                      <div class="flex items-center space-x-1">
+                        <i data-lucide="arrow-down-to-dot" class="w-3.5 h-3.5 text-emerald-700"></i>
+                        <span>ค่าใหม่ที่จะบันทึก</span>
+                      </div>
+                    </th>
                   </tr>
                 </thead>
                 <tbody class="divide-y divide-slate-100 bg-white">
                   <tr>
-                    <td class="py-2 px-3 font-semibold text-slate-700">รหัสสิทธิ (pttype)</td>
-                    <td class="py-2 px-3 font-mono text-slate-500">${cur.pttype || '-'} (${cur.pttypename || '-'})</td>
-                    <td class="py-2 px-3 font-mono font-bold text-emerald-700">${tgt.pttype || '-'} (${tgt.pttypename || '-'})</td>
+                    <td class="py-2.5 px-3 font-semibold text-slate-700">รหัสสิทธิ (pttype)</td>
+                    <td class="py-2.5 px-3 font-mono text-slate-700 bg-emerald-50/20">
+                      <span class="font-bold">[${escapeHtml(cur.ovst_pttype || '-')}]</span> ${escapeHtml(cur.ovst_pttypename || '-')}
+                    </td>
+                    <td class="py-2.5 px-3 font-mono text-slate-700 bg-indigo-50/20">
+                      <span class="font-bold text-indigo-700">[${escapeHtml(cur.vp_pttype || '-')}]</span> ${escapeHtml(cur.vp_pttypename || '-')}
+                    </td>
+                    <td class="py-2.5 px-3 font-mono font-bold text-emerald-800 bg-emerald-50/40">
+                      [${escapeHtml(tgt.pttype || '-')}] ${escapeHtml(tgt.pttypename || '-')}
+                    </td>
                   </tr>
                   <tr>
-                    <td class="py-2 px-3 font-semibold text-slate-700">เลขที่สิทธิ (pttypeno)</td>
-                    <td class="py-2 px-3 font-mono text-slate-500">${cur.pttypeno || '-'}</td>
-                    <td class="py-2 px-3 font-mono font-bold text-emerald-700">${tgt.pttypeno || '-'}</td>
+                    <td class="py-2.5 px-3 font-semibold text-slate-700">เลขที่สิทธิ (pttypeno)</td>
+                    <td class="py-2.5 px-3 font-mono text-slate-600 bg-emerald-50/20">${escapeHtml(cur.ovst_pttypeno || '-')}</td>
+                    <td class="py-2.5 px-3 font-mono text-slate-600 bg-indigo-50/20">${escapeHtml(cur.vp_pttypeno || '-')}</td>
+                    <td class="py-2.5 px-3 font-mono font-bold text-emerald-800 bg-emerald-50/40">${escapeHtml(tgt.pttypeno || '-')}</td>
                   </tr>
                   <tr>
-                    <td class="py-2 px-3 font-semibold text-slate-700">รพ.หลัก (hospmain)</td>
-                    <td class="py-2 px-3 font-mono text-slate-500">${cur.hospmain || '-'}</td>
-                    <td class="py-2 px-3 font-mono font-bold text-emerald-700">${tgt.hospmain || '-'}</td>
+                    <td class="py-2.5 px-3 font-semibold text-slate-700">รพ.หลัก (hospmain)</td>
+                    <td class="py-2.5 px-3 font-mono text-slate-600 bg-emerald-50/20">${escapeHtml(cur.ovst_hospmain || '-')}</td>
+                    <td class="py-2.5 px-3 font-mono text-slate-600 bg-indigo-50/20">${escapeHtml(cur.vp_hospmain || '-')}</td>
+                    <td class="py-2.5 px-3 font-mono font-bold text-emerald-800 bg-emerald-50/40">${escapeHtml(tgt.hospmain || '-')}</td>
                   </tr>
                   <tr>
-                    <td class="py-2 px-3 font-semibold text-slate-700">รพ.รอง (hospsub)</td>
-                    <td class="py-2 px-3 font-mono text-slate-500">${cur.hospsub || '-'}</td>
-                    <td class="py-2 px-3 font-mono font-bold text-emerald-700">${tgt.hospsub || '-'}</td>
+                    <td class="py-2.5 px-3 font-semibold text-slate-700">รพ.รอง (hospsub)</td>
+                    <td class="py-2.5 px-3 font-mono text-slate-600 bg-emerald-50/20">${escapeHtml(cur.ovst_hospsub || '-')}</td>
+                    <td class="py-2.5 px-3 font-mono text-slate-600 bg-indigo-50/20">${escapeHtml(cur.vp_hospsub || '-')}</td>
+                    <td class="py-2.5 px-3 font-mono font-bold text-emerald-800 bg-emerald-50/40">${escapeHtml(tgt.hospsub || '-')}</td>
                   </tr>
                   <tr>
-                    <td class="py-2 px-3 font-semibold text-slate-700">Authen Code</td>
-                    <td class="py-2 px-3 font-mono text-slate-500">${cur.vp_auth_code || '-'}</td>
-                    <td class="py-2 px-3 font-mono font-bold text-emerald-700">${tgt.auth_code || '-'}</td>
+                    <td class="py-2.5 px-3 font-semibold text-slate-700">วันเริ่มสิทธิ (begin_date)</td>
+                    <td class="py-2.5 px-3 font-mono text-slate-400 italic bg-emerald-50/20 text-[11px]">- ไม่มีฟิลด์ -</td>
+                    <td class="py-2.5 px-3 font-mono text-slate-600 bg-indigo-50/20">${cur.vp_begin_date ? String(cur.vp_begin_date).slice(0, 10) : '-'}</td>
+                    <td class="py-2.5 px-3 font-mono font-semibold text-emerald-800 bg-emerald-50/40">${tgt.begin_date ? String(tgt.begin_date).slice(0, 10) : '-'}</td>
+                  </tr>
+                  <tr>
+                    <td class="py-2.5 px-3 font-semibold text-slate-700">วันหมดอายุ (expire_date)</td>
+                    <td class="py-2.5 px-3 font-mono text-slate-400 italic bg-emerald-50/20 text-[11px]">- ไม่มีฟิลด์ -</td>
+                    <td class="py-2.5 px-3 font-mono text-slate-600 bg-indigo-50/20">${cur.vp_expire_date ? String(cur.vp_expire_date).slice(0, 10) : '-'}</td>
+                    <td class="py-2.5 px-3 font-mono font-semibold text-emerald-800 bg-emerald-50/40">${tgt.expire_date ? String(tgt.expire_date).slice(0, 10) : '-'}</td>
+                  </tr>
+                  <tr class="bg-emerald-50/30">
+                    <td class="py-2.5 px-3 font-bold text-slate-800">Authen Code</td>
+                    <td class="py-2.5 px-3 font-mono text-slate-400 italic bg-emerald-50/20 text-[11px]">- ไม่มีฟิลด์ -</td>
+                    <td class="py-2.5 px-3 font-mono bg-indigo-50/20 ${cur.vp_auth_code ? 'font-bold text-slate-800' : 'text-slate-400 italic'}">
+                      ${escapeHtml(cur.vp_auth_code || 'ไม่มีรหัส')}
+                    </td>
+                    <td class="py-2.5 px-3 font-mono font-bold text-emerald-700 text-sm bg-emerald-100/50">
+                      ${tgt.auth_code ? `<span class="inline-flex items-center space-x-1"><i data-lucide="key" class="w-3.5 h-3.5 text-emerald-600"></i><span>${escapeHtml(tgt.auth_code)}</span></span>` : '<span class="text-slate-400 font-normal italic">-</span>'}
+                    </td>
                   </tr>
                 </tbody>
               </table>
