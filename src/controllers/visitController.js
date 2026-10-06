@@ -41,13 +41,16 @@ class VisitController {
         SELECT o.vn, o.hn, p.cid, 
                p.pname, p.fname, p.lname,
                CONCAT(COALESCE(p.pname, ''), COALESCE(p.fname, ''), ' ', COALESCE(p.lname, '')) AS ptname,
-               o.hospmain, o.hospsub, o.pttype, p2.name AS pttypename, 
-               o.pttypeno, vp.auth_code, vp.begin_date, vp.expire_date, o.staff,
+               o.hospmain, o.hospsub, o.pttype, p2.name AS pttypename, o.pttypeno,
+               vp.pttype AS vp_pttype, p3.name AS vp_pttypename, vp.pttypeno AS vp_pttypeno,
+               vp.hospmain AS vp_hospmain, vp.hospsub AS vp_hospsub,
+               vp.auth_code, vp.begin_date, vp.expire_date, o.staff,
                s.name AS spclty_name
         FROM ovst o 
         LEFT JOIN patient p ON p.hn = o.hn
         LEFT JOIN visit_pttype vp ON vp.vn = o.vn
         LEFT JOIN pttype p2 ON p2.pttype = o.pttype 
+        LEFT JOIN pttype p3 ON p3.pttype = vp.pttype
         LEFT JOIN spclty s ON s.spclty = o.spclty
         WHERE o.vstdate = ?
       `;

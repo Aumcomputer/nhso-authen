@@ -266,8 +266,26 @@
               <th class="py-3 px-3">เวลา / VN</th>
               <th class="py-3 px-3">HN / เลขบัตร (CID)</th>
               <th class="py-3 px-3">ชื่อ - สกุล</th>
-              <th class="py-3 px-3">สิทธิใน HOSxP</th>
-              <th class="py-3 px-3">รพ.หลัก / รอง (HOS)</th>
+              <!-- Column ovst: pttype, pttypeno, hospmain, hospsub -->
+              <th class="py-3 px-3 min-w-[210px]">
+                <div class="space-y-0.5">
+                  <div class="font-bold text-slate-800 flex items-center space-x-1">
+                    <span class="px-1.5 py-0.5 rounded bg-slate-200 text-slate-800 text-[10px] font-mono font-semibold">ovst</span>
+                    <span>สิทธิการรักษา</span>
+                  </div>
+                  <div class="text-[10px] text-slate-400 font-mono font-normal">pttype, no, hospmain, sub</div>
+                </div>
+              </th>
+              <!-- Column visit_pttype: pttype, pttypeno, hospmain, hospsub -->
+              <th class="py-3 px-3 min-w-[210px]">
+                <div class="space-y-0.5">
+                  <div class="font-bold text-indigo-900 flex items-center space-x-1">
+                    <span class="px-1.5 py-0.5 rounded bg-indigo-100 text-indigo-800 text-[10px] font-mono font-semibold">visit_pttype</span>
+                    <span>สิทธิการรักษา</span>
+                  </div>
+                  <div class="text-[10px] text-indigo-400 font-mono font-normal">pttype, no, hospmain, sub</div>
+                </div>
+              </th>
               <th class="py-3 px-3 min-w-[130px] text-center">Authen Code (HOS)</th>
               <th class="py-3 px-3 min-w-[220px]">
                 <div class="flex items-center space-x-1 cursor-help" title="คลิกที่ข้อมูลในคอลัมน์นี้เพื่อดูรายละเอียดสิทธิ์การรักษาที่บันทึกใน DB">
@@ -833,7 +851,11 @@
           const cid = (v.cid || '').toLowerCase();
           const name = (v.ptname || '').toLowerCase();
           const vn = (v.vn || '').toLowerCase();
-          if (!hn.includes(search) && !cid.includes(search) && !name.includes(search) && !vn.includes(search)) {
+          const pttypeno = (v.pttypeno || '').toLowerCase();
+          const vp_pttypeno = (v.vp_pttypeno || '').toLowerCase();
+          const hospmain = (v.hospmain || '').toLowerCase();
+          const vp_hospmain = (v.vp_hospmain || '').toLowerCase();
+          if (!hn.includes(search) && !cid.includes(search) && !name.includes(search) && !vn.includes(search) && !pttypeno.includes(search) && !vp_pttypeno.includes(search) && !hospmain.includes(search) && !vp_hospmain.includes(search)) {
             return false;
           }
         }
@@ -1176,13 +1198,40 @@
               <div class="font-medium text-slate-900 text-sm">${v.ptname || 'ไม่มีชื่อ'}</div>
               <div class="text-xs text-slate-400">${v.spclty_name || ''}</div>
             </td>
+            <!-- ovst : pttype, pttypeno, hospmain, hospsub -->
             <td class="py-3 px-3">
-              <div class="font-medium text-slate-800 text-sm">${v.pttypename || '-'}</div>
-              <div class="text-xs text-slate-400">รหัส: ${v.pttype || '-'} ${v.pttypeno ? `(เลขที่ ${v.pttypeno})` : ''}</div>
+              <div class="font-medium text-slate-900 text-sm flex items-center space-x-1">
+                <span class="font-bold text-slate-800 font-mono">${v.pttype || '-'}</span>
+                <span class="text-slate-600 truncate max-w-[170px]" title="${v.pttypename || ''}">: ${v.pttypename || '-'}</span>
+              </div>
+              <div class="text-xs text-slate-500 font-mono mt-0.5">
+                ${v.pttypeno ? `เลขที่: <span class="text-slate-700">${v.pttypeno}</span>` : '<span class="text-slate-400 italic">ไม่มีเลขที่</span>'}
+              </div>
+              <div class="text-xs text-slate-600 flex items-center space-x-1.5 mt-0.5 font-mono">
+                <span>หลัก: <b class="text-slate-800 font-semibold">${v.hospmain || '-'}</b></span>
+                <span class="text-slate-300">|</span>
+                <span>รอง: <b class="text-slate-800 font-semibold">${v.hospsub || '-'}</b></span>
+              </div>
             </td>
-            <td class="py-3 px-3 text-slate-600">
-              <div class="text-sm">หลัก: ${v.hospmain || '-'}</div>
-              <div class="text-xs text-slate-400">รอง: ${v.hospsub || '-'}</div>
+
+            <!-- visit_pttype : pttype, pttypeno, hospmain, hospsub -->
+            <td class="py-3 px-3">
+              ${v.vp_pttype ? `
+                <div class="font-medium text-indigo-950 text-sm flex items-center space-x-1">
+                  <span class="font-bold text-indigo-700 font-mono">${v.vp_pttype}</span>
+                  <span class="text-indigo-900 truncate max-w-[170px]" title="${v.vp_pttypename || ''}">: ${v.vp_pttypename || '-'}</span>
+                </div>
+                <div class="text-xs text-slate-500 font-mono mt-0.5">
+                  ${v.vp_pttypeno ? `เลขที่: <span class="text-slate-700">${v.vp_pttypeno}</span>` : '<span class="text-slate-400 italic">ไม่มีเลขที่</span>'}
+                </div>
+                <div class="text-xs text-slate-600 flex items-center space-x-1.5 mt-0.5 font-mono">
+                  <span>หลัก: <b class="text-indigo-900 font-semibold">${v.vp_hospmain || '-'}</b></span>
+                  <span class="text-slate-300">|</span>
+                  <span>รอง: <b class="text-indigo-900 font-semibold">${v.vp_hospsub || '-'}</b></span>
+                </div>
+              ` : `
+                <span class="text-slate-400 text-xs italic font-mono">- ไม่มีใน visit_pttype -</span>
+              `}
             </td>
             <!-- Authen Code (HOS) Column -->
             <td class="py-3 px-3 text-center" id="auth-hos-cell-${v.vn}">
@@ -2115,8 +2164,20 @@
                 <tr class="hover:bg-slate-50/60 transition">
                   <td class="py-3.5 px-4 font-semibold text-slate-700">สิทธิการรักษา</td>
                   <td class="py-3.5 px-4 text-slate-800">
-                    <div class="font-medium text-slate-900">${visit.pttypename || '-'}</div>
-                    <div class="text-xs text-slate-400 mt-0.5">รหัสสิทธิ: ${visit.pttype || '-'} ${visit.pttypeno ? `(เลขที่ ${visit.pttypeno})` : ''}</div>
+                    <div class="space-y-1.5">
+                      <div>
+                        <span class="text-[10px] font-mono font-bold bg-slate-200 text-slate-700 px-1.5 py-0.5 rounded">ovst</span>
+                        <span class="font-medium text-slate-900">${visit.pttypename || '-'}</span>
+                        <div class="text-xs text-slate-400 mt-0.5 font-mono">รหัส: ${visit.pttype || '-'} ${visit.pttypeno ? `(เลขที่ ${visit.pttypeno})` : ''}</div>
+                      </div>
+                      ${visit.vp_pttype ? `
+                        <div class="pt-1 border-t border-slate-100">
+                          <span class="text-[10px] font-mono font-bold bg-indigo-100 text-indigo-700 px-1.5 py-0.5 rounded">visit_pttype</span>
+                          <span class="font-medium text-indigo-950">${visit.vp_pttypename || '-'}</span>
+                          <div class="text-xs text-slate-400 mt-0.5 font-mono">รหัส: ${visit.vp_pttype} ${visit.vp_pttypeno ? `(เลขที่ ${visit.vp_pttypeno})` : ''}</div>
+                        </div>
+                      ` : ''}
+                    </div>
                   </td>
                   <td class="py-3.5 px-4 text-blue-700 font-medium">
                     <div class="font-bold text-blue-900">${d.maininscl_name || '-'}</div>
@@ -2132,7 +2193,10 @@
                 </tr>
                 <tr class="hover:bg-slate-50/60 transition">
                   <td class="py-3.5 px-4 font-semibold text-slate-700">รพ.หลัก (Hosp Main)</td>
-                  <td class="py-3.5 px-4 font-mono font-medium text-slate-800">${visit.hospmain || '-'}</td>
+                  <td class="py-3.5 px-4 text-slate-800">
+                    <div class="text-sm font-mono"><span class="text-slate-400 text-xs">ovst:</span> ${visit.hospmain || '-'}</div>
+                    ${visit.vp_hospmain ? `<div class="text-sm font-mono text-indigo-900"><span class="text-indigo-400 text-xs">visit_pttype:</span> ${visit.vp_hospmain}</div>` : ''}
+                  </td>
                   <td class="py-3.5 px-4 text-slate-800">
                     <span class="font-semibold text-slate-900">${d.hospmain_name || '-'}</span>
                     ${d.hospmain_code ? `<span class="font-mono text-slate-500 font-medium">(${d.hospmain_code})</span>` : ''}
@@ -2143,7 +2207,10 @@
                 </tr>
                 <tr class="hover:bg-slate-50/60 transition">
                   <td class="py-3.5 px-4 font-semibold text-slate-700">รพ.รอง (Hosp Sub)</td>
-                  <td class="py-3.5 px-4 font-mono font-medium text-slate-800">${visit.hospsub || '-'}</td>
+                  <td class="py-3.5 px-4 text-slate-800">
+                    <div class="text-sm font-mono"><span class="text-slate-400 text-xs">ovst:</span> ${visit.hospsub || '-'}</div>
+                    ${visit.vp_hospsub ? `<div class="text-sm font-mono text-indigo-900"><span class="text-indigo-400 text-xs">visit_pttype:</span> ${visit.vp_hospsub}</div>` : ''}
+                  </td>
                   <td class="py-3.5 px-4 text-slate-800">
                     <span class="font-semibold text-slate-900">${d.hospsub_name || '-'}</span>
                     ${d.hospsub_code ? `<span class="font-mono text-slate-500 font-medium">(${d.hospsub_code})</span>` : ''}
