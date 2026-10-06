@@ -26,7 +26,7 @@ function isRbrOutCup(hcode) {
 /**
  * รหัสสถานพยาบาลระดับปฐมภูมิ/รพ.สต. ที่แม้ hospmain จะเป็น 10677 แต่ต้องให้สิทธิเป็น 92 (นอก CUP ในจังหวัด)
  */
-const RBR_UCS_OUT_CUP_SUB_CENTERS = ['14317', '08003', '08005'];
+const RBR_UCS_OUT_CUP_SUB_CENTERS = ['14317', '08003', '08004', '08005'];
 
 /**
  * Format CID into 1-4-5-2-1 hyphenated format (e.g. 3-8015-00050-24-2)
@@ -43,13 +43,17 @@ function formatCid(cid) {
 /**
  * Map NHSO Right from API to HOSxP pttype code
  */
-function mapNhsoToHosPttype(mainId, subId, hospmain, hospsub = '', currentHosPttype = '') {
+function mapNhsoToHosPttype(mainId, subId, hospmain, hospsub = '', currentHosPttype = '', dynamicSubCenters = null) {
   const main = (mainId || '').trim().toUpperCase();
   const sub = (subId || '').trim().toUpperCase();
   const hcode = (hospmain || '').trim();
   const subcode = (hospsub || '').trim();
   const isOwnHosp = (hcode === '10677');
   const isOutCup = isRbrOutCup(hcode);
+
+  const subCentersList = dynamicSubCenters && Array.isArray(dynamicSubCenters) && dynamicSubCenters.length > 0
+    ? dynamicSubCenters
+    : RBR_UCS_OUT_CUP_SUB_CENTERS;
 
   // 1. คนพิการ (DIS)
   if (main === 'DIS' || sub === '74') {
@@ -61,8 +65,8 @@ function mapNhsoToHosPttype(mainId, subId, hospmain, hospsub = '', currentHosPtt
 
   // 2. บัตรทอง (UCS / WEL)
   if (main === 'UCS' || main === 'WEL') {
-    // ข้อยกเว้นพิเศษ: hospmain 10677 แต่ hospsub เป็น 14317, 08003, 08005 ให้เป็น 92
-    if (isOwnHosp && RBR_UCS_OUT_CUP_SUB_CENTERS.includes(subcode)) {
+    // ข้อยกเว้นพิเศษ: hospmain 10677 แต่ hospsub เป็น รพ.สต. ในกลุ่ม ให้เป็น 92
+    if (isOwnHosp && subCentersList.includes(subcode)) {
       return '92';
     }
     if (isOwnHosp) return '91';
@@ -197,13 +201,13 @@ class HosSyncService {
     if (dflowData?.right_json) {
       try {
         rightJson = typeof dflowData.right_json === 'string' ? JSON.parse(dflowData.right_json) : dflowData.right_json;
-      } catch (e) {}
+      } catch (e) { }
     }
 
     if (dflowData?.authen_json) {
       try {
         authenJson = typeof dflowData.authen_json === 'string' ? JSON.parse(dflowData.authen_json) : dflowData.authen_json;
-      } catch (e) {}
+      } catch (e) { }
     }
 
     const fund = (rightJson?.funds && rightJson.funds[0]) || {};
@@ -214,7 +218,16 @@ class HosSyncService {
     const hospmainTarget = fund?.hospMain?.hcode || dflowData?.hospmain_code || authenJson?.hmain || currentHos.hospmain || null;
     const hospsubTarget = fund?.hospSub?.hcode || dflowData?.hospsub_code || currentHos.hospsub || null;
 
-    const mappedPttype = mapNhsoToHosPttype(mainInsclId, subInsclId, hospmainTarget, hospsubTarget, currentHos.pttype);
+    // Query active UCS sub centers from d-flow database
+    let dynamicSubCenters = null;
+    try {
+      const subRows = await dflowPool.query('SELECT UPPER(hospcode) as code FROM nhso_ucs_sub_centers WHERE is_active = 1');
+      if (Array.isArray(subRows) && subRows.length > 0) {
+        dynamicSubCenters = subRows.map(r => r.code);
+      }
+    } catch (e) { }
+
+    const mappedPttype = mapNhsoToHosPttype(mainInsclId, subInsclId, hospmainTarget, hospsubTarget, currentHos.pttype, dynamicSubCenters);
 
     // pttypeno rule: cardId if present, else formatted cid
     let pttypenoTarget = null;
@@ -447,7 +460,7 @@ class HosSyncService {
           SET updated_at = NOW() 
           WHERE vn = ?
         `, [vn]);
-      } catch (err) {}
+      } catch (err) { }
 
       return {
         success: true,

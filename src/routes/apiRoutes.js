@@ -10,6 +10,7 @@ const hosSyncController = require('../controllers/hosSyncController');
 const authController = require('../controllers/authController');
 const exemptPttypeController = require('../controllers/exemptPttypeController');
 const noAuthenExemptController = require('../controllers/noAuthenExemptController');
+const ucsSubCentersController = require('../controllers/ucsSubCentersController');
 const { authenticate, requireAdmin } = require('../middleware/authMiddleware');
 
 // 0. Authentication & User Management
@@ -37,6 +38,14 @@ router.get('/api/no-authen-exempt-pttypes/search', authenticate, requireAdmin, (
 router.post('/api/no-authen-exempt-pttypes', authenticate, requireAdmin, (req, res) => noAuthenExemptController.add(req, res));
 router.put('/api/no-authen-exempt-pttypes/:id', authenticate, requireAdmin, (req, res) => noAuthenExemptController.update(req, res));
 router.delete('/api/no-authen-exempt-pttypes/:id', authenticate, requireAdmin, (req, res) => noAuthenExemptController.delete(req, res));
+
+// 3. UCS Sub Centers (รพ.สต. ที่หาก hospmain 10677 ให้กำหนดสิทธิเป็น 92)
+router.get('/api/ucs-sub-centers', (req, res) => ucsSubCentersController.list(req, res));
+router.get('/api/ucs-sub-centers/search', authenticate, requireAdmin, (req, res) => ucsSubCentersController.searchHospcodes(req, res));
+router.post('/api/ucs-sub-centers', authenticate, requireAdmin, (req, res) => ucsSubCentersController.add(req, res));
+router.put('/api/ucs-sub-centers/:id', authenticate, requireAdmin, (req, res) => ucsSubCentersController.update(req, res));
+router.delete('/api/ucs-sub-centers/:id', authenticate, requireAdmin, (req, res) => ucsSubCentersController.delete(req, res));
+
 router.get('/health', (req, res) => tokenController.health(req, res));
 router.get('/api/db/health', (req, res) => tokenController.dbHealth(req, res));
 router.get('/api/db/dflow-health', (req, res) => tokenController.dflowDbHealth(req, res));
