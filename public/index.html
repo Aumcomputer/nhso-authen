@@ -51,28 +51,13 @@
 
       <!-- System Status Badges -->
       <div class="flex items-center space-x-3 text-xs">
-        <!-- DB Status -->
-        <div id="db-badge" class="flex items-center space-x-1.5 px-2.5 py-1 rounded-full bg-slate-100 text-slate-600 border border-slate-200">
-          <span class="w-2 h-2 rounded-full bg-slate-400 animate-pulse"></span>
-          <span>DB HOSxP: ตรวจสอบ...</span>
-        </div>
-        <!-- D-Flow DB Status -->
-        <div id="dflow-badge" class="flex items-center space-x-1.5 px-2.5 py-1 rounded-full bg-slate-100 text-slate-600 border border-slate-200">
-          <span class="w-2 h-2 rounded-full bg-slate-400 animate-pulse"></span>
-          <span>DB D-Flow: ตรวจสอบ...</span>
-        </div>
         <!-- Token Status -->
         <div id="token-badge" class="flex items-center space-x-1.5 px-2.5 py-1 rounded-full bg-slate-100 text-slate-600 border border-slate-200">
           <span class="w-2 h-2 rounded-full bg-slate-400 animate-pulse"></span>
           <span>NHSO Token: ตรวจสอบ...</span>
         </div>
-        <!-- Client Agents Status Badge -->
-        <button onclick="openAgentModal()" id="agent-badge" title="คลิกเพื่อดูสถานะเครื่องลูกข่ายเวชระเบียน (Client Agents)" class="flex items-center space-x-1.5 px-2.5 py-1 rounded-full bg-slate-100 text-slate-600 border border-slate-200 hover:bg-slate-200 transition cursor-pointer">
-          <span class="w-2 h-2 rounded-full bg-slate-400 animate-pulse"></span>
-          <span id="agent-badge-text">Agent: ตรวจสอบ...</span>
-        </button>
         <!-- Manual Refresh Token Button -->
-        <button onclick="refreshTokenManual()" title="บังคับขอ Access Token ใหม่" class="flex items-center space-x-1 px-2.5 py-1 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-md border border-slate-300 transition">
+        <button onclick="refreshTokenManual()" title="บังคับขอ Access Token ใหม่" class="flex items-center space-x-1 px-2.5 py-1 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-md border border-slate-300 transition cursor-pointer">
           <i data-lucide="refresh-cw" class="w-3.5 h-3.5"></i>
           <span>รีเฟรช Token</span>
         </button>
@@ -404,80 +389,6 @@
     </div>
   </div>
 
-  <!-- Client Agent Status Modal -->
-  <div id="agent-modal" class="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-50 hidden flex items-center justify-center p-3 sm:p-4">
-    <div class="bg-white rounded-2xl shadow-2xl max-w-4xl w-full max-h-[90vh] flex flex-col border border-slate-200 overflow-hidden">
-      <!-- Modal Header -->
-      <div class="px-6 py-4 border-b border-slate-200 flex items-center justify-between bg-slate-50">
-        <div class="flex items-center space-x-3">
-          <div class="w-10 h-10 rounded-xl bg-emerald-600 text-white flex items-center justify-center shadow-xs">
-            <i data-lucide="radio" class="w-5 h-5"></i>
-          </div>
-          <div>
-            <h3 class="text-base font-bold text-slate-800">สถานะเครื่องลูกข่ายเวชระเบียน (Client Agents)</h3>
-            <p class="text-xs text-slate-500">เครื่องคอมพิวเตอร์ที่รัน Agent ดึง Token สปสช. จากบัตร Smart Card ส่งเข้า Server</p>
-          </div>
-        </div>
-        <div class="flex items-center space-x-2">
-          <button onclick="fetchAgentStatus()" title="รีเฟรชข้อมูล" class="p-2 text-slate-500 hover:text-slate-800 hover:bg-slate-200 rounded-lg transition">
-            <i data-lucide="refresh-cw" class="w-4 h-4"></i>
-          </button>
-          <button onclick="closeAgentModal()" class="text-slate-400 hover:text-slate-600 p-2 rounded-lg hover:bg-slate-200 transition">
-            <i data-lucide="x" class="w-5 h-5"></i>
-          </button>
-        </div>
-      </div>
-
-      <!-- Modal Body -->
-      <div class="p-6 overflow-y-auto flex-1 space-y-4">
-        <!-- Client List Table -->
-        <div class="border border-slate-200 rounded-xl overflow-hidden shadow-xs">
-          <table class="w-full text-xs text-left">
-            <thead class="bg-slate-50 text-slate-700 border-b border-slate-200 font-semibold uppercase">
-              <tr>
-                <th class="py-3 px-4">สถานะ</th>
-                <th class="py-3 px-4">ชื่อเครื่อง (Hostname)</th>
-                <th class="py-3 px-4">IP Address</th>
-                <th class="py-3 px-4">เจ้าหน้าที่ผู้เสียบบัตร</th>
-                <th class="py-3 px-4">เวลาส่งล่าสุด</th>
-                <th class="py-3 px-4">Token หมดอายุเมื่อ</th>
-              </tr>
-            </thead>
-            <tbody id="agent-table-body" class="divide-y divide-slate-100 bg-white">
-              <tr>
-                <td colspan="6" class="py-8 text-center text-slate-400">
-                  <i data-lucide="loader-2" class="w-6 h-6 mx-auto animate-spin mb-2 text-emerald-600"></i>
-                  กำลังโหลดข้อมูล Agent...
-                </td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
-
-        <!-- Info / Helper Card -->
-        <div class="bg-slate-50 rounded-xl p-4 border border-slate-200 text-xs text-slate-600 space-y-2">
-          <div class="font-bold text-slate-800 flex items-center space-x-1.5">
-            <i data-lucide="info" class="w-4 h-4 text-blue-600"></i>
-            <span>วิธีตรวจสอบการทำงานที่เครื่องลูกข่าย (Client PC):</span>
-          </div>
-          <ul class="list-disc list-inside space-y-1 text-slate-600 pl-1">
-            <li>เปิด <strong>Task Manager</strong> &rarr; แท็บ <strong>Details</strong> &rarr; มองหา <code class="bg-slate-200 px-1 py-0.5 rounded text-slate-800">powershell.exe</code> หรือ <code class="bg-slate-200 px-1 py-0.5 rounded text-slate-800">wscript.exe</code></li>
-            <li>ดูประวัติการทำงานจาก Log File ในเครื่องลูกข่ายที่: <code class="bg-slate-200 px-1 py-0.5 rounded text-slate-800">C:\NHSO-Agent\agent.log</code></li>
-            <li>เมื่อเจ้าหน้าที่เสียบบัตร Smart Card ในโปรแกรม SRM SSO ตัว Agent จะตรวจจับและส่ง Token ใหม่อัตโนมัติทันที</li>
-          </ul>
-        </div>
-      </div>
-
-      <!-- Modal Footer -->
-      <div class="px-6 py-3 border-t border-slate-200 bg-slate-50 flex justify-between items-center text-xs text-slate-500">
-        <span id="agent-modal-count">จำนวนเครื่องที่พบ: 0 เครื่อง</span>
-        <button onclick="closeAgentModal()" class="px-4 py-2 bg-slate-200 hover:bg-slate-300 text-slate-700 font-semibold rounded-lg transition">
-          ปิดหน้าต่าง
-        </button>
-      </div>
-    </div>
-  </div>
-
   <!-- HOSxP Sync Confirmation Modal -->
   <div id="hos-sync-confirm-modal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-xs z-50 hidden flex items-center justify-center p-3 sm:p-4">
     <div class="bg-white rounded-2xl shadow-2xl max-w-2xl w-full border border-slate-200 overflow-hidden flex flex-col">
@@ -604,6 +515,10 @@
         <button id="setting-tab-btn-users" onclick="switchSettingTab('users')" class="px-3.5 py-1.5 font-semibold text-xs rounded-xl text-slate-600 hover:text-slate-900 hover:bg-slate-200 transition flex items-center space-x-1.5 cursor-pointer">
           <i data-lucide="users" class="w-4 h-4"></i>
           <span>ผู้ใช้งานที่ได้รับสิทธิ์ (<span id="setting-users-tab-count">0</span>)</span>
+        </button>
+        <button id="setting-tab-btn-agents" onclick="switchSettingTab('agents')" class="px-3.5 py-1.5 font-semibold text-xs rounded-xl text-slate-600 hover:text-slate-900 hover:bg-slate-200 transition flex items-center space-x-1.5 cursor-pointer">
+          <i data-lucide="radio" class="w-4 h-4"></i>
+          <span>เครื่อง Client Agent (<span id="setting-agents-tab-count">0</span>)</span>
         </button>
       </div>
 
@@ -880,6 +795,68 @@
           </div>
         </div>
 
+        <!-- ================= SECTION 4: CLIENT AGENTS ================= -->
+        <div id="setting-section-agents" class="hidden space-y-6">
+          <!-- Information Banner -->
+          <div class="p-3.5 rounded-xl bg-blue-50/80 border border-blue-200 text-xs text-blue-900 flex items-start space-x-2.5">
+            <i data-lucide="info" class="w-4 h-4 text-blue-600 shrink-0 mt-0.5"></i>
+            <div>
+              <p class="font-bold text-blue-950">สถานะเครื่องลูกข่ายเวชระเบียน (Client Agents)</p>
+              <p class="text-blue-800 mt-0.5">เครื่องคอมพิวเตอร์ที่รัน Agent ดึง Token สปสช. จากบัตร Smart Card ส่งเข้า Server อัตโนมัติ</p>
+            </div>
+          </div>
+
+          <!-- Client Agents Table Card -->
+          <div class="space-y-3">
+            <div class="flex items-center justify-between">
+              <h4 class="font-bold text-sm text-slate-800 flex items-center space-x-2">
+                <i data-lucide="radio" class="w-4 h-4 text-emerald-600"></i>
+                <span>รายการเครื่องลูกข่ายที่เชื่อมต่อ (<span id="setting-agents-count">0</span> เครื่อง)</span>
+              </h4>
+              <button onclick="fetchAgentStatus(true)" class="text-xs text-slate-500 hover:text-emerald-700 flex items-center space-x-1 cursor-pointer">
+                <i data-lucide="refresh-cw" class="w-3.5 h-3.5"></i>
+                <span>รีเฟรช</span>
+              </button>
+            </div>
+
+            <div class="border border-slate-200 rounded-2xl overflow-hidden shadow-2xs">
+              <table class="w-full text-xs text-left border-collapse">
+                <thead>
+                  <tr class="bg-slate-100 text-slate-700 font-semibold border-b border-slate-200">
+                    <th class="py-2.5 px-3">สถานะ</th>
+                    <th class="py-2.5 px-3">ชื่อเครื่อง (Hostname)</th>
+                    <th class="py-2.5 px-3">IP Address</th>
+                    <th class="py-2.5 px-3">เจ้าหน้าที่ผู้เสียบบัตร</th>
+                    <th class="py-2.5 px-3">เวลาส่งล่าสุด</th>
+                    <th class="py-2.5 px-3">Token หมดอายุเมื่อ</th>
+                  </tr>
+                </thead>
+                <tbody id="agent-table-body" class="divide-y divide-slate-100 bg-white">
+                  <tr>
+                    <td colspan="6" class="py-8 text-center text-slate-400">
+                      <i data-lucide="loader-2" class="w-6 h-6 mx-auto animate-spin mb-2 text-emerald-600"></i>
+                      กำลังโหลดข้อมูล Agent...
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          <!-- Guide Card -->
+          <div class="bg-slate-50 rounded-2xl p-4 border border-slate-200 text-xs text-slate-600 space-y-2">
+            <div class="font-bold text-slate-800 flex items-center space-x-1.5">
+              <i data-lucide="help-circle" class="w-4 h-4 text-blue-600"></i>
+              <span>วิธีตรวจสอบการทำงานที่เครื่องลูกข่าย (Client PC):</span>
+            </div>
+            <ul class="list-disc list-inside space-y-1 text-slate-600 pl-1">
+              <li>เปิด <strong>Task Manager</strong> &rarr; แท็บ <strong>Details</strong> &rarr; มองหา <code class="bg-slate-200 px-1 py-0.5 rounded text-slate-800">powershell.exe</code> หรือ <code class="bg-slate-200 px-1 py-0.5 rounded text-slate-800">wscript.exe</code></li>
+              <li>ดูประวัติการทำงานจาก Log File ในเครื่องลูกข่ายที่: <code class="bg-slate-200 px-1 py-0.5 rounded text-slate-800">C:\NHSO-Agent\agent.log</code></li>
+              <li>เมื่อเจ้าหน้าที่เสียบบัตร Smart Card ในโปรแกรม SRM SSO ตัว Agent จะตรวจจับและส่ง Token ใหม่อัตโนมัติทันที</li>
+            </ul>
+          </div>
+        </div>
+
       </div>
 
       <!-- Footer -->
@@ -968,39 +945,9 @@
     // Check DB and Token health
     async function checkSystemHealth() {
       try {
-        const dbRes = await fetch('/api/db/health').then(r => r.json());
-        const dbBadge = document.getElementById('db-badge');
-        if (dbRes.success) {
-          dbBadge.className = 'flex items-center space-x-1.5 px-2.5 py-1 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200';
-          dbBadge.innerHTML = `<span class="w-2 h-2 rounded-full bg-emerald-500"></span><span>DB HOS: เชื่อมต่อแล้ว</span>`;
-        } else {
-          dbBadge.className = 'flex items-center space-x-1.5 px-2.5 py-1 rounded-full bg-red-50 text-red-700 border border-red-200';
-          dbBadge.innerHTML = `<span class="w-2 h-2 rounded-full bg-red-500"></span><span>DB HOS: ผิดพลาด</span>`;
-        }
-      } catch {
-        // ignore
-      }
-
-      try {
-        const dflowRes = await fetch('/api/db/dflow-health').then(r => r.json());
-        const dflowBadge = document.getElementById('dflow-badge');
-        if (dflowBadge) {
-          if (dflowRes.success) {
-            dflowBadge.className = 'flex items-center space-x-1.5 px-2.5 py-1 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200';
-            dflowBadge.innerHTML = `<span class="w-2 h-2 rounded-full bg-emerald-500"></span><span>DB D-Flow: เชื่อมต่อแล้ว</span>`;
-          } else {
-            dflowBadge.className = 'flex items-center space-x-1.5 px-2.5 py-1 rounded-full bg-red-50 text-red-700 border border-red-200';
-            dflowBadge.innerHTML = `<span class="w-2 h-2 rounded-full bg-red-500"></span><span>DB D-Flow: ผิดพลาด</span>`;
-          }
-        }
-      } catch {
-        // ignore
-      }
-
-      try {
         const tokenRes = await fetch('/api/token/status').then(r => r.json());
         const tokenBadge = document.getElementById('token-badge');
-        if (tokenRes.success && tokenRes.data?.hasAccessToken) {
+        if (tokenBadge && tokenRes.success && tokenRes.data?.hasAccessToken) {
           const user = tokenRes.data.accessToken?.username || 'Active';
           tokenBadge.className = 'flex items-center space-x-1.5 px-2.5 py-1 rounded-full bg-blue-50 text-blue-700 border border-blue-200';
           tokenBadge.innerHTML = `<span class="w-2 h-2 rounded-full bg-blue-500"></span><span>Token: ${user}</span>`;
@@ -3107,27 +3054,16 @@
     async function fetchAgentStatus(showToastMsg = false) {
       try {
         const res = await fetch('/api/token/clients').then(r => r.json());
-        const badge = document.getElementById('agent-badge');
-        const badgeText = document.getElementById('agent-badge-text');
-        
         if (res.success) {
           const list = res.data || [];
           const activeCount = list.filter(c => c.status === 'ACTIVE').length;
           
-          if (badge) {
-            badge.onclick = openAgentModal;
-            if (activeCount > 0) {
-              badge.className = 'flex items-center space-x-1.5 px-2.5 py-1 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-300 hover:bg-emerald-100 transition cursor-pointer shadow-xs';
-              badge.innerHTML = `<span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span><span id="agent-badge-text">Agent: ออนไลน์ ${activeCount} เครื่อง</span>`;
-            } else if (list.length > 0) {
-              badge.className = 'flex items-center space-x-1.5 px-2.5 py-1 rounded-full bg-amber-50 text-amber-700 border border-amber-300 hover:bg-amber-100 transition cursor-pointer shadow-xs';
-              badge.innerHTML = `<span class="w-2 h-2 rounded-full bg-amber-500"></span><span id="agent-badge-text">Agent: หมดอายุ (${list.length})</span>`;
-            } else {
-              badge.className = 'flex items-center space-x-1.5 px-2.5 py-1 rounded-full bg-slate-100 text-slate-600 border border-slate-200 hover:bg-slate-200 transition cursor-pointer';
-              badge.innerHTML = `<span class="w-2 h-2 rounded-full bg-slate-400"></span><span id="agent-badge-text">Agent: ไม่มีเครื่องเชื่อมต่อ</span>`;
-            }
-          }
-          
+          // Update setting tab badge & count
+          const settingAgentsTabCount = document.getElementById('setting-agents-tab-count');
+          if (settingAgentsTabCount) settingAgentsTabCount.textContent = activeCount;
+          const settingAgentsCount = document.getElementById('setting-agents-count');
+          if (settingAgentsCount) settingAgentsCount.textContent = list.length;
+
           renderAgentModalTable(list);
           if (showToastMsg) showToast('รีเฟรชข้อมูล Agent สำเร็จ', 'success');
         }
@@ -3138,11 +3074,11 @@
 
     function renderAgentModalTable(clients) {
       const tbody = document.getElementById('agent-table-body');
-      const countLabel = document.getElementById('agent-modal-count');
       if (!tbody) return;
 
-      if (countLabel) {
-        countLabel.textContent = `จำนวนเครื่องที่พบ: ${clients.length} เครื่อง`;
+      const settingAgentsCount = document.getElementById('setting-agents-count');
+      if (settingAgentsCount) {
+        settingAgentsCount.textContent = clients.length;
       }
 
       if (clients.length === 0) {
@@ -3167,15 +3103,14 @@
 
         return `
           <tr class="hover:bg-slate-50 transition border-b border-slate-100">
-            <td class="py-3 px-4">${statusBadge}</td>
-            <td class="py-3 px-4 font-mono font-semibold text-slate-800">${escapeHtml(c.client_hostname || 'ไม่ระบุ')}</td>
-            <td class="py-3 px-4 font-mono text-slate-600">${escapeHtml(c.client_ip || '-')}</td>
-            <td class="py-3 px-4">
+            <td class="py-2.5 px-3">${statusBadge}</td>
+            <td class="py-2.5 px-3 font-mono font-semibold text-slate-800">${escapeHtml(c.client_hostname || 'ไม่ระบุ')}</td>
+            <td class="py-2.5 px-3 font-mono text-slate-600">${escapeHtml(c.client_ip || '-')}</td>
+            <td class="py-2.5 px-3">
               <div class="font-medium text-slate-800">${escapeHtml(c.officer_name || '-')}</div>
-              <div class="text-[11px] text-slate-400 font-mono">CID: ${escapeHtml(c.officer_cid || '-')}</div>
             </td>
-            <td class="py-3 px-4 text-slate-600 font-mono">${formatThaiDateTime(c.last_sync_at)}</td>
-            <td class="py-3 px-4 text-slate-600 font-mono">${formatThaiDateTime(c.refresh_expires_at)}</td>
+            <td class="py-2.5 px-3 text-slate-600 font-mono">${formatThaiDateTime(c.last_sync_at)}</td>
+            <td class="py-2.5 px-3 text-slate-600 font-mono">${formatThaiDateTime(c.refresh_expires_at)}</td>
           </tr>
         `;
       }).join('');
@@ -3183,25 +3118,13 @@
       lucide.createIcons();
     }
 
-    function openAgentModal() {
-      const modal = document.getElementById('agent-modal');
-      if (modal) {
-        modal.classList.remove('hidden');
-        fetchAgentStatus();
-        lucide.createIcons();
-      }
-    }
-
-    function closeAgentModal() {
-      document.getElementById('agent-modal')?.classList.add('hidden');
-    }
-
     // Close modal on ESC key or background click
     window.addEventListener('keydown', (e) => {
       if (e.key === 'Escape') {
         closeHistoryModal();
         closeRightDetailModal();
-        closeAgentModal();
+        closeSettingsModal();
+        closeHosSyncModal();
       }
     });
     document.getElementById('history-modal')?.addEventListener('click', (e) => {
@@ -3212,9 +3135,6 @@
     });
     document.getElementById('hos-sync-confirm-modal')?.addEventListener('click', (e) => {
       if (e.target.id === 'hos-sync-confirm-modal') closeHosSyncModal();
-    });
-    document.getElementById('agent-modal')?.addEventListener('click', (e) => {
-      if (e.target.id === 'agent-modal') closeAgentModal();
     });
 
     // ==========================================
@@ -3614,13 +3534,15 @@
       const tabExemptBtn = document.getElementById('setting-tab-btn-exempt');
       const tabNoauthBtn = document.getElementById('setting-tab-btn-noauth');
       const tabUsersBtn = document.getElementById('setting-tab-btn-users');
+      const tabAgentsBtn = document.getElementById('setting-tab-btn-agents');
       const sectionExempt = document.getElementById('setting-section-exempt');
       const sectionNoauth = document.getElementById('setting-section-noauth');
       const sectionUsers = document.getElementById('setting-section-users');
+      const sectionAgents = document.getElementById('setting-section-agents');
       const footerInfo = document.getElementById('setting-footer-info');
 
       // Reset buttons
-      [tabExemptBtn, tabNoauthBtn, tabUsersBtn].forEach(btn => {
+      [tabExemptBtn, tabNoauthBtn, tabUsersBtn, tabAgentsBtn].forEach(btn => {
         if (btn) btn.className = 'px-3.5 py-1.5 font-semibold text-xs rounded-xl text-slate-600 hover:text-slate-900 hover:bg-slate-200 transition flex items-center space-x-1.5 cursor-pointer';
       });
 
@@ -3628,6 +3550,7 @@
       if (sectionExempt) sectionExempt.classList.add('hidden');
       if (sectionNoauth) sectionNoauth.classList.add('hidden');
       if (sectionUsers) sectionUsers.classList.add('hidden');
+      if (sectionAgents) sectionAgents.classList.add('hidden');
 
       if (tab === 'exempt') {
         if (tabExemptBtn) tabExemptBtn.className = 'px-3.5 py-1.5 font-bold text-xs rounded-xl bg-emerald-600 text-white shadow-xs transition flex items-center space-x-1.5 cursor-pointer';
@@ -3639,11 +3562,16 @@
         if (sectionNoauth) sectionNoauth.classList.remove('hidden');
         if (footerInfo) footerInfo.innerHTML = `ตาราง <code class="font-mono text-slate-700 bg-slate-200 px-1 py-0.5 rounded">d-flow.nhso_no_authen_exempt_pttypes</code>`;
         fetchNoauthExemptPttypes();
-      } else {
+      } else if (tab === 'users') {
         if (tabUsersBtn) tabUsersBtn.className = 'px-3.5 py-1.5 font-bold text-xs rounded-xl bg-emerald-600 text-white shadow-xs transition flex items-center space-x-1.5 cursor-pointer';
         if (sectionUsers) sectionUsers.classList.remove('hidden');
         if (footerInfo) footerInfo.innerHTML = `ตาราง <code class="font-mono text-slate-700 bg-slate-200 px-1 py-0.5 rounded">d-flow.nhso_auth_users</code>`;
         fetchAuthorizedUsers();
+      } else if (tab === 'agents') {
+        if (tabAgentsBtn) tabAgentsBtn.className = 'px-3.5 py-1.5 font-bold text-xs rounded-xl bg-emerald-600 text-white shadow-xs transition flex items-center space-x-1.5 cursor-pointer';
+        if (sectionAgents) sectionAgents.classList.remove('hidden');
+        if (footerInfo) footerInfo.innerHTML = `เครื่องลูกข่ายที่ส่ง Token สปสช. (Smart Card Token Agents)`;
+        fetchAgentStatus();
       }
       lucide.createIcons();
     }
