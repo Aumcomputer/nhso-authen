@@ -125,22 +125,78 @@ class VnAuthenService {
         \`right_start_date\` = COALESCE(VALUES(\`right_start_date\`), \`right_start_date\`),
         \`card_id\` = COALESCE(VALUES(\`card_id\`), \`card_id\`),
         \`paid_model\` = COALESCE(VALUES(\`paid_model\`), \`paid_model\`),
-        \`claim_code\` = COALESCE(VALUES(\`claim_code\`), \`claim_code\`),
-        \`trans_id\` = COALESCE(VALUES(\`trans_id\`), \`trans_id\`),
-        \`claim_type\` = COALESCE(VALUES(\`claim_type\`), \`claim_type\`),
-        \`claim_type_name\` = COALESCE(VALUES(\`claim_type_name\`), \`claim_type_name\`),
-        \`received_datetime\` = COALESCE(VALUES(\`received_datetime\`), \`received_datetime\`),
-        \`create_date\` = COALESCE(VALUES(\`create_date\`), \`create_date\`),
-        \`source_channel\` = COALESCE(VALUES(\`source_channel\`), \`source_channel\`),
-        \`claim_authen\` = COALESCE(VALUES(\`claim_authen\`), \`claim_authen\`),
-        \`claim_status\` = COALESCE(VALUES(\`claim_status\`), \`claim_status\`),
-        \`authen_status\` = COALESCE(VALUES(\`authen_status\`), \`authen_status\`),
-        \`authen_hcode\` = COALESCE(VALUES(\`authen_hcode\`), \`authen_hcode\`),
-        \`authen_hname\` = COALESCE(VALUES(\`authen_hname\`), \`authen_hname\`),
-        \`authen_age\` = COALESCE(VALUES(\`authen_age\`), \`authen_age\`),
+        \`claim_code\` = CASE 
+          WHEN UPPER(TRIM(COALESCE(VALUES(\`source_channel\`), ''))) = 'AUTHENCODE' THEN VALUES(\`claim_code\`)
+          WHEN UPPER(TRIM(COALESCE(\`source_channel\`, ''))) != 'AUTHENCODE' THEN NULL
+          ELSE \`claim_code\`
+        END,
+        \`trans_id\` = CASE 
+          WHEN UPPER(TRIM(COALESCE(VALUES(\`source_channel\`), ''))) = 'AUTHENCODE' THEN VALUES(\`trans_id\`)
+          WHEN UPPER(TRIM(COALESCE(\`source_channel\`, ''))) != 'AUTHENCODE' THEN NULL
+          ELSE \`trans_id\`
+        END,
+        \`claim_type\` = CASE 
+          WHEN UPPER(TRIM(COALESCE(VALUES(\`source_channel\`), ''))) = 'AUTHENCODE' THEN VALUES(\`claim_type\`)
+          WHEN UPPER(TRIM(COALESCE(\`source_channel\`, ''))) != 'AUTHENCODE' THEN NULL
+          ELSE \`claim_type\`
+        END,
+        \`claim_type_name\` = CASE 
+          WHEN UPPER(TRIM(COALESCE(VALUES(\`source_channel\`), ''))) = 'AUTHENCODE' THEN VALUES(\`claim_type_name\`)
+          WHEN UPPER(TRIM(COALESCE(\`source_channel\`, ''))) != 'AUTHENCODE' THEN NULL
+          ELSE \`claim_type_name\`
+        END,
+        \`received_datetime\` = CASE 
+          WHEN UPPER(TRIM(COALESCE(VALUES(\`source_channel\`), ''))) = 'AUTHENCODE' THEN VALUES(\`received_datetime\`)
+          WHEN UPPER(TRIM(COALESCE(\`source_channel\`, ''))) != 'AUTHENCODE' THEN NULL
+          ELSE \`received_datetime\`
+        END,
+        \`create_date\` = CASE 
+          WHEN UPPER(TRIM(COALESCE(VALUES(\`source_channel\`), ''))) = 'AUTHENCODE' THEN VALUES(\`create_date\`)
+          WHEN UPPER(TRIM(COALESCE(\`source_channel\`, ''))) != 'AUTHENCODE' THEN NULL
+          ELSE \`create_date\`
+        END,
+        \`source_channel\` = CASE 
+          WHEN UPPER(TRIM(COALESCE(VALUES(\`source_channel\`), ''))) = 'AUTHENCODE' THEN VALUES(\`source_channel\`)
+          WHEN UPPER(TRIM(COALESCE(\`source_channel\`, ''))) != 'AUTHENCODE' THEN NULL
+          ELSE \`source_channel\`
+        END,
+        \`claim_authen\` = CASE 
+          WHEN UPPER(TRIM(COALESCE(VALUES(\`source_channel\`), ''))) = 'AUTHENCODE' THEN VALUES(\`claim_authen\`)
+          WHEN UPPER(TRIM(COALESCE(\`source_channel\`, ''))) != 'AUTHENCODE' THEN NULL
+          ELSE \`claim_authen\`
+        END,
+        \`claim_status\` = CASE 
+          WHEN UPPER(TRIM(COALESCE(VALUES(\`source_channel\`), ''))) = 'AUTHENCODE' THEN VALUES(\`claim_status\`)
+          WHEN UPPER(TRIM(COALESCE(\`source_channel\`, ''))) != 'AUTHENCODE' THEN NULL
+          ELSE \`claim_status\`
+        END,
+        \`authen_status\` = CASE 
+          WHEN UPPER(TRIM(COALESCE(VALUES(\`source_channel\`), ''))) = 'AUTHENCODE' THEN VALUES(\`authen_status\`)
+          WHEN UPPER(TRIM(COALESCE(\`source_channel\`, ''))) != 'AUTHENCODE' THEN NULL
+          ELSE \`authen_status\`
+        END,
+        \`authen_hcode\` = CASE 
+          WHEN UPPER(TRIM(COALESCE(VALUES(\`source_channel\`), ''))) = 'AUTHENCODE' THEN VALUES(\`authen_hcode\`)
+          WHEN UPPER(TRIM(COALESCE(\`source_channel\`, ''))) != 'AUTHENCODE' THEN NULL
+          ELSE \`authen_hcode\`
+        END,
+        \`authen_hname\` = CASE 
+          WHEN UPPER(TRIM(COALESCE(VALUES(\`source_channel\`), ''))) = 'AUTHENCODE' THEN VALUES(\`authen_hname\`)
+          WHEN UPPER(TRIM(COALESCE(\`source_channel\`, ''))) != 'AUTHENCODE' THEN NULL
+          ELSE \`authen_hname\`
+        END,
+        \`authen_age\` = CASE 
+          WHEN UPPER(TRIM(COALESCE(VALUES(\`source_channel\`), ''))) = 'AUTHENCODE' THEN VALUES(\`authen_age\`)
+          WHEN UPPER(TRIM(COALESCE(\`source_channel\`, ''))) != 'AUTHENCODE' THEN NULL
+          ELSE \`authen_age\`
+        END,
         \`hn_code\` = COALESCE(VALUES(\`hn_code\`), \`hn_code\`),
         \`right_json\` = COALESCE(VALUES(\`right_json\`), \`right_json\`),
-        \`authen_json\` = COALESCE(VALUES(\`authen_json\`), \`authen_json\`),
+        \`authen_json\` = CASE 
+          WHEN UPPER(TRIM(COALESCE(VALUES(\`source_channel\`), ''))) = 'AUTHENCODE' THEN VALUES(\`authen_json\`)
+          WHEN UPPER(TRIM(COALESCE(\`source_channel\`, ''))) != 'AUTHENCODE' THEN NULL
+          ELSE \`authen_json\`
+        END,
         \`updated_at\` = NOW();
     `;
 

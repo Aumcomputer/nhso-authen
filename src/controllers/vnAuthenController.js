@@ -39,11 +39,18 @@ class VnAuthenController {
       if (!force) {
         const existing = await vnAuthenService.getByVn(vn);
         if (existing) {
+          const ch = String(existing.source_channel || '').trim().toUpperCase();
+          const hasValidAuthen = Boolean(existing.claim_code && ch === 'AUTHENCODE');
+          const sanitizedExisting = {
+            ...existing,
+            claim_code: hasValidAuthen ? existing.claim_code : null,
+            source_channel: hasValidAuthen ? existing.source_channel : null
+          };
           return res.status(200).json({
             success: true,
             alreadySaved: true,
             message: 'Visit already saved in vn_nhso_authen',
-            data: existing
+            data: sanitizedExisting
           });
         }
       }
@@ -109,18 +116,8 @@ class VnAuthenController {
               });
               todayAuth = authenCodeChannelAuths[0];
             } else {
-              // Fallback to non-ENDPOINT if available
-              const nonEndpointAuths = matchingAuths.filter(item => {
-                const ch = String(item.sourceChannel || item.source_channel || '').trim().toUpperCase();
-                return ch !== 'ENDPOINT';
-              });
-
-              if (nonEndpointAuths.length > 0) {
-                todayAuth = nonEndpointAuths[0];
-              } else {
-                // Otherwise use the first matching record
-                todayAuth = matchingAuths[0];
-              }
+              // Only sourceChannel === "AUTHENCODE" is allowed (do NOT fallback to ENDPOINT or others)
+              todayAuth = null;
             }
           }
         }
@@ -145,13 +142,20 @@ class VnAuthenController {
       });
 
       const savedRecord = await vnAuthenService.getByVn(vn);
+      const ch = String(savedRecord?.source_channel || '').trim().toUpperCase();
+      const hasValidAuthen = Boolean(savedRecord?.claim_code && ch === 'AUTHENCODE');
+      const sanitizedRecord = savedRecord ? {
+        ...savedRecord,
+        claim_code: hasValidAuthen ? savedRecord.claim_code : null,
+        source_channel: hasValidAuthen ? savedRecord.source_channel : null
+      } : null;
 
       return res.status(200).json({
         success: true,
         alreadySaved: false,
         message: 'Successfully checked and saved into vn_nhso_authen',
-        hasTodayAuthen: Boolean(todayAuth),
-        data: savedRecord
+        hasTodayAuthen: Boolean(todayAuth && hasValidAuthen),
+        data: sanitizedRecord
       });
     } catch (err) {
       console.error('[VnAuthenController] checkAndSave error:', err);
