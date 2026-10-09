@@ -284,8 +284,8 @@ class HosSyncService {
     }
 
     // Dates
-    const beginDateTarget = formatDateOnly(fund?.startDateTime || dflowData?.right_start_date) || currentHos.vp_begin_date || null;
-    const expireDateTarget = formatDateOnly(fund?.expireDateTime) || currentHos.vp_expire_date || null;
+    const beginDateTarget = formatDateOnly(fund?.startDateTime || dflowData?.right_start_date) || formatDateOnly(currentHos.vp_begin_date) || null;
+    const expireDateTarget = formatDateOnly(fund?.expireDateTime) || formatDateOnly(currentHos.vp_expire_date) || null;
 
     // Authen Code from authen_json or dflow claim_code
     const authCodeTarget = authenJson?.claimCode || dflowData?.claim_code || currentHos.vp_auth_code || null;
