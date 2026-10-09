@@ -12,7 +12,9 @@ const exemptPttypeController = require('../controllers/exemptPttypeController');
 const noAuthenExemptController = require('../controllers/noAuthenExemptController');
 const ucsSubCentersController = require('../controllers/ucsSubCentersController');
 const referOutController = require('../controllers/referOutController');
-const { authenticate, requireAdmin } = require('../middleware/authMiddleware');
+const { authenticate, requireApiAuth, requireAdmin } = require('../middleware/authMiddleware');
+const config = require('../config/config');
+const jwt = require('jsonwebtoken');
 
 // 0. Authentication & User Management
 router.post('/api/auth/login', (req, res) => authController.login(req, res));
@@ -58,38 +60,53 @@ router.post('/api/token/update', (req, res) => tokenController.updateRefreshToke
 router.post('/api/token/report', (req, res) => tokenController.reportToken(req, res));
 router.get('/api/token/clients', (req, res) => tokenController.listClientTokens(req, res));
 
-// 3. API 1: Right Search (ตรวจสอบสิทธิ์)
-router.get('/api/rights/:pid', (req, res) => rightSearchController.getRights(req, res));
-router.get('/api/rights', (req, res) => rightSearchController.getRights(req, res));
-router.post('/api/rights', (req, res) => rightSearchController.getRights(req, res));
+// 2.5 Generate Service Token (Admin only)
+router.post('/api/token/generate-service-token', authenticate, requireAdmin, (req, res) => {
+  const { name = 'external-service', expiresIn = '365d' } = req.body || {};
+  const token = jwt.sign(
+    { service: name, role: 'service', created_at: new Date().toISOString() },
+    config.jwtSecret,
+    { expiresIn }
+  );
+  res.json({ success: true, token, service: name, expiresIn });
+});
 
-router.get('/api/right-search/:pid', (req, res) => rightSearchController.getRights(req, res));
-router.get('/api/right-search', (req, res) => rightSearchController.getRights(req, res));
-router.post('/api/right-search', (req, res) => rightSearchController.getRights(req, res));
+// 3. API 1: Right Search (ตรวจสอบสิทธิ์)
+// Raw JSON endpoint for external systems (e.g. /api/check-pttype/:cid or /api/check-pttype?cid=...)
+router.get('/api/check-pttype/:cid', requireApiAuth, (req, res) => rightSearchController.checkPttypeRaw(req, res));
+router.get('/api/check-pttype', requireApiAuth, (req, res) => rightSearchController.checkPttypeRaw(req, res));
+
+router.get('/api/rights/:pid', requireApiAuth, (req, res) => rightSearchController.getRights(req, res));
+router.get('/api/rights', requireApiAuth, (req, res) => rightSearchController.getRights(req, res));
+router.post('/api/rights', requireApiAuth, (req, res) => rightSearchController.getRights(req, res));
+
+router.get('/api/right-search/:pid', requireApiAuth, (req, res) => rightSearchController.getRights(req, res));
+router.get('/api/right-search', requireApiAuth, (req, res) => rightSearchController.getRights(req, res));
+router.post('/api/right-search', requireApiAuth, (req, res) => rightSearchController.getRights(req, res));
 
 // 4. API 2: Authencode History (ดูประวัติ authen)
-router.get('/api/authen-history/:pid', (req, res) => authenHistoryController.getHistory(req, res));
-router.get('/api/authen-history', (req, res) => authenHistoryController.getHistory(req, res));
-router.post('/api/authen-history', (req, res) => authenHistoryController.getHistory(req, res));
+router.get('/api/authen-history/:pid', requireApiAuth, (req, res) => authenHistoryController.getHistory(req, res));
+router.get('/api/authen-history', requireApiAuth, (req, res) => authenHistoryController.getHistory(req, res));
+router.post('/api/authen-history', requireApiAuth, (req, res) => authenHistoryController.getHistory(req, res));
 
-router.get('/api/authencode-history/:pid', (req, res) => authenHistoryController.getHistory(req, res));
-router.get('/api/authencode-history', (req, res) => authenHistoryController.getHistory(req, res));
-router.post('/api/authencode-history', (req, res) => authenHistoryController.getHistory(req, res));
+router.get('/api/authencode-history/:pid', requireApiAuth, (req, res) => authenHistoryController.getHistory(req, res));
+router.get('/api/authencode-history', requireApiAuth, (req, res) => authenHistoryController.getHistory(req, res));
+router.post('/api/authencode-history', requireApiAuth, (req, res) => authenHistoryController.getHistory(req, res));
 
 // 5. HOSxP Visits & Specialties
-router.get('/api/specialties', (req, res) => visitController.getSpecialties(req, res));
-router.get('/api/visits', (req, res) => visitController.getVisits(req, res));
+router.get('/api/specialties', requireApiAuth, (req, res) => visitController.getSpecialties(req, res));
+router.get('/api/visits', requireApiAuth, (req, res) => visitController.getVisits(req, res));
 
 // 6. D-Flow vn_nhso_authen (บันทึกและตรวจสอบเฉพาะรายที่ยังไม่มี)
-router.post('/api/vn-authen/check-and-save', (req, res) => vnAuthenController.checkAndSave(req, res));
-router.get('/api/vn-authen/:vn', (req, res) => vnAuthenController.getByVn(req, res));
+router.post('/api/vn-authen/check-and-save', requireApiAuth, (req, res) => vnAuthenController.checkAndSave(req, res));
+router.get('/api/vn-authen/:vn', requireApiAuth, (req, res) => vnAuthenController.getByVn(req, res));
 
 // 7. HOSxP Sync (บันทึกข้อมูลสิทธิและ Authen Code กลับลง HOSxP)
-router.get('/api/hos-sync/preview/:vn', (req, res) => hosSyncController.preview(req, res));
-router.post('/api/hos-sync/preview', (req, res) => hosSyncController.preview(req, res));
-router.post('/api/hos-sync/save', (req, res) => hosSyncController.save(req, res));
+router.get('/api/hos-sync/preview/:vn', requireApiAuth, (req, res) => hosSyncController.preview(req, res));
+router.post('/api/hos-sync/preview', requireApiAuth, (req, res) => hosSyncController.preview(req, res));
+router.post('/api/hos-sync/save', requireApiAuth, (req, res) => hosSyncController.save(req, res));
 
 // 8. Refer Out List
-router.get('/api/referout', (req, res) => referOutController.getReferOutList(req, res));
+router.get('/api/referout', requireApiAuth, (req, res) => referOutController.getReferOutList(req, res));
 
 module.exports = router;
