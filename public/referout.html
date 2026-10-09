@@ -1221,7 +1221,7 @@
         const sub = d.subinscl_id || '-';
         const mainName = d.maininscl_name || '-';
         const subName = d.subinscl_name || '';
-        const hospmainName = d.hospmain_name || '-';
+        const hospmainName = d.hospmain_op_name || d.hospmain_name || '-';
 
         return `
           <div class="space-y-0.5">
@@ -1341,10 +1341,10 @@
           maininscl_name: visit.dflow_data.maininscl_name || '',
           subinscl_id: visit.dflow_data.subinscl_id || '',
           subinscl_name: visit.dflow_data.subinscl_name || '',
-          hospmain_code: visit.dflow_data.hospmain_code || '',
-          hospmain_name: visit.dflow_data.hospmain_name || '',
-          hospsub_code: '',
-          hospsub_name: ''
+          hospmain_code: visit.dflow_data.hospmain_op_code || visit.dflow_data.hospmain_code || '',
+          hospmain_name: visit.dflow_data.hospmain_op_name || visit.dflow_data.hospmain_name || '',
+          hospsub_code: visit.dflow_data.hospsub_code || '',
+          hospsub_name: visit.dflow_data.hospsub_name || ''
         };
       }
       return null;

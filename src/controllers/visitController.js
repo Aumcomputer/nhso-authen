@@ -74,7 +74,8 @@ class VisitController {
           const dflowRows = await db.dflowQuery(
             `SELECT vn, pid, title_name, fname, lname, right_check_date, 
                     maininscl_id, maininscl_name, subinscl_id, subinscl_name, 
-                    hospmain_code, hospmain_name, claim_code, claim_type_name, 
+                    hospmain_code, hospmain_name, hospsub_code, hospsub_name,
+                    hospmain_op_code, hospmain_op_name, claim_code, claim_type_name, 
                     received_datetime, authen_status, created_at, updated_at 
              FROM \`vn_nhso_authen\` WHERE \`vn\` IN (${placeholders})`,
             vns

@@ -216,7 +216,7 @@ class HosSyncService {
     // 3. Prepare target values
     const mainInsclId = fund?.mainInscl?.id || dflowData?.maininscl_id || authenJson?.mainInscl || null;
     const subInsclId = fund?.subInscl?.id || dflowData?.subinscl_id || authenJson?.subInscl || null;
-    const hospmainTarget = fund?.hospMain?.hcode || dflowData?.hospmain_code || authenJson?.hmain || currentHos.hospmain || null;
+    const hospmainTarget = fund?.hospMainOp?.hcode || dflowData?.hospmain_op_code || fund?.hospMain?.hcode || dflowData?.hospmain_code || authenJson?.hmain || currentHos.hospmain || null;
     const hospsubTarget = fund?.hospSub?.hcode || dflowData?.hospsub_code || currentHos.hospsub || null;
 
     // Query active UCS sub centers from d-flow database

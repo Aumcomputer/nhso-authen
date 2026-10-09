@@ -1515,8 +1515,8 @@
           maininscl_name: visit.dflow_data.maininscl_name || '',
           subinscl_id: visit.dflow_data.subinscl_id || '',
           subinscl_name: visit.dflow_data.subinscl_name || '',
-          hospmain_code: visit.dflow_data.hospmain_code || '',
-          hospmain_name: visit.dflow_data.hospmain_name || '',
+          hospmain_code: visit.dflow_data.hospmain_op_code || visit.dflow_data.hospmain_code || '',
+          hospmain_name: visit.dflow_data.hospmain_op_name || visit.dflow_data.hospmain_name || '',
           hospsub_code: visit.dflow_data.hospsub_code || '',
           hospsub_name: visit.dflow_data.hospsub_name || ''
         };
@@ -1529,8 +1529,8 @@
           maininscl_name: fund.mainInscl?.name || '',
           subinscl_id: fund.subInscl?.id || '',
           subinscl_name: fund.subInscl?.name || '',
-          hospmain_code: fund.hospMain?.hcode || '',
-          hospmain_name: fund.hospMain?.hname || '',
+          hospmain_code: fund.hospMainOp?.hcode || fund.hospMain?.hcode || '',
+          hospmain_name: fund.hospMainOp?.hname || fund.hospMain?.hname || '',
           hospsub_code: fund.hospSub?.hcode || '',
           hospsub_name: fund.hospSub?.hname || ''
         };
@@ -1915,7 +1915,9 @@
       // 1. If we have saved dflow_data:
       const dflow = visit.dflow_data;
       if (!nhsoData && dflow) {
-        const isHospMatch = visit.hospmain && dflow.hospmain_code && visit.hospmain.trim() === dflow.hospmain_code.trim();
+        const dflowHospCode = dflow.hospmain_op_code || dflow.hospmain_code || '';
+        const dflowHospName = dflow.hospmain_op_name || dflow.hospmain_name || dflowHospCode || '-';
+        const isHospMatch = visit.hospmain && dflowHospCode && visit.hospmain.trim() === dflowHospCode.trim();
         return `
           <div onclick="viewRightDbDetail('${visit.vn}')" class="cursor-pointer group p-1.5 -m-1 rounded-lg hover:bg-blue-50/80 transition border border-transparent hover:border-blue-200 space-y-0.5" title="คลิกเพื่อดูรายละเอียดสิทธิ์การรักษาที่บันทึกใน DB">
             <div class="flex items-center justify-between">
@@ -1927,7 +1929,7 @@
             </div>
             ${dflow.subinscl_name ? `<div class="text-xs text-slate-500">${dflow.subinscl_name}</div>` : ''}
             <div class="text-xs text-slate-600 flex items-center space-x-1">
-              <span>รพ.หลัก: ${dflow.hospmain_name || dflow.hospmain_code || '-'}</span>
+              <span>รพ.หลัก: ${dflowHospName}</span>
               ${isHospMatch ? `<span class="text-emerald-600 font-bold" title="ตรงกับ HOSxP">✓</span>` : ''}
             </div>
           </div>
@@ -1962,8 +1964,8 @@
 
       const mainInscl = fund.mainInscl?.name || '-';
       const subInscl = fund.subInscl?.name || '';
-      const hospMainName = fund.hospMain?.hname || fund.hospMain?.hcode || '-';
-      const hospMainCode = fund.hospMain?.hcode || '';
+      const hospMainName = fund.hospMainOp?.hname || fund.hospMainOp?.hcode || fund.hospMain?.hname || fund.hospMain?.hcode || '-';
+      const hospMainCode = fund.hospMainOp?.hcode || fund.hospMain?.hcode || '';
 
       // Simple match check with HOS hospmain
       const isHospMatch = visit.hospmain && hospMainCode && visit.hospmain.trim() === hospMainCode.trim();
@@ -2760,7 +2762,10 @@
       currentRawRightJson = d.right_json;
       currentRawAuthenJson = d.authen_json;
 
-      const isHospMatch = visit.hospmain && d.hospmain_code && visit.hospmain.trim() === d.hospmain_code.trim();
+      const dHospMainCode = d.hospmain_op_code || d.hospmain_code || '';
+      const dHospMainName = d.hospmain_op_name || d.hospmain_name || '-';
+      const isHospMatch = (visit.hospmain && dHospMainCode && visit.hospmain.trim() === dHospMainCode.trim()) ||
+                          (visit.vp_hospmain && dHospMainCode && visit.vp_hospmain.trim() === dHospMainCode.trim());
       const rightMatch = checkRightMatch(visit);
       const hosAuth = (visit.auth_code || '').trim();
       const apiAuth = (d.claim_code || '').trim();
@@ -2859,11 +2864,12 @@
                     ${visit.vp_hospmain ? `<div class="text-sm font-mono text-indigo-900"><span class="text-indigo-400 text-xs">visit_pttype:</span> ${visit.vp_hospmain}</div>` : ''}
                   </td>
                   <td class="py-3.5 px-4 text-slate-800">
-                    <span class="font-semibold text-slate-900">${d.hospmain_name || '-'}</span>
-                    ${d.hospmain_code ? `<span class="font-mono text-slate-500 font-medium">(${d.hospmain_code})</span>` : ''}
+                    <span class="font-semibold text-slate-900">${escapeHtml(dHospMainName)}</span>
+                    ${dHospMainCode ? `<span class="font-mono text-slate-500 font-medium">(${escapeHtml(dHospMainCode)})</span>` : ''}
+                    ${d.hospmain_op_code ? `<span class="text-[10px] bg-blue-50 text-blue-700 border border-blue-200 px-1 py-0.2 rounded font-mono ml-1">OP</span>` : ''}
                   </td>
                   <td class="py-3.5 px-4 text-center">
-                    ${isHospMatch ? `<span class="px-2.5 py-1 bg-emerald-100 text-emerald-800 border border-emerald-300 rounded-lg font-semibold text-xs inline-flex items-center"><i data-lucide="check" class="w-3.5 h-3.5 mr-1"></i>ตรงกัน</span>` : (visit.hospmain && d.hospmain_code ? `<span class="px-2.5 py-1 bg-amber-100 text-amber-800 border border-amber-300 rounded-lg text-xs font-medium">ต่างกัน</span>` : '<span class="text-slate-400">-</span>')}
+                    ${isHospMatch ? `<span class="px-2.5 py-1 bg-emerald-100 text-emerald-800 border border-emerald-300 rounded-lg font-semibold text-xs inline-flex items-center"><i data-lucide="check" class="w-3.5 h-3.5 mr-1"></i>ตรงกัน</span>` : ((visit.hospmain || visit.vp_hospmain) && dHospMainCode ? `<span class="px-2.5 py-1 bg-amber-100 text-amber-800 border border-amber-300 rounded-lg text-xs font-medium">ต่างกัน</span>` : '<span class="text-slate-400">-</span>')}
                   </td>
                 </tr>
                 <tr class="hover:bg-slate-50/60 transition">
