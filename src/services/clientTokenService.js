@@ -40,8 +40,8 @@ class ClientTokenService {
         \`refresh_token\` = VALUES(\`refresh_token\`),
         \`access_expires_at\` = COALESCE(VALUES(\`access_expires_at\`), \`access_expires_at\`),
         \`refresh_expires_at\` = COALESCE(VALUES(\`refresh_expires_at\`), \`refresh_expires_at\`),
-        \`status\` = 'ACTIVE',
-        \`error_message\` = NULL,
+        \`status\` = IF(VALUES(\`refresh_token\`) != \`refresh_token\`, 'ACTIVE', \`status\`),
+        \`error_message\` = IF(VALUES(\`refresh_token\`) != \`refresh_token\`, NULL, \`error_message\`),
         \`last_sync_at\` = NOW();
     `;
 

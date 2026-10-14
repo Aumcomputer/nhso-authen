@@ -71,6 +71,54 @@ class TokenManager {
   }
 
   /**
+   * Helper to parse token endpoint response
+   */
+  parseTokenResponse(data) {
+    if (typeof data === 'object' && data !== null) {
+      if (data.error || data.error_description) {
+        const desc = data.error_description || data.error;
+        throw new Error(`สปสช. แจ้งเตือน: ${desc} (กรุณาให้เจ้าหน้าที่เสียบบัตร Smart Card และล็อกอินเข้า SRM Portal ใหม่)`);
+      }
+      throw new Error(`Unexpected JSON response from token endpoint: ${JSON.stringify(data)}`);
+    }
+
+    if (typeof data === 'string') {
+      const trimmed = data.trim();
+      if (trimmed.startsWith('{') && trimmed.endsWith('}')) {
+        try {
+          const parsed = JSON.parse(trimmed);
+          if (parsed.error || parsed.error_description) {
+            const desc = parsed.error_description || parsed.error;
+            throw new Error(`สปสช. แจ้งเตือน: ${desc} (กรุณาให้เจ้าหน้าที่เสียบบัตร Smart Card และล็อกอินเข้า SRM Portal ใหม่)`);
+          }
+        } catch (e) {
+          if (e.message.startsWith('สปสช.')) throw e;
+        }
+      }
+
+      const lines = trimmed.split(/\r?\n/);
+      let accessToken = '';
+      let refreshToken = '';
+      for (const line of lines) {
+        const tr = line.trim();
+        if (tr.startsWith('access-token=')) {
+          accessToken = tr.substring('access-token='.length).trim();
+        } else if (tr.startsWith('refresh-token=')) {
+          refreshToken = tr.substring('refresh-token='.length).trim();
+        }
+      }
+
+      if (!accessToken) {
+        throw new Error(`Failed to extract access-token from response: ${trimmed.slice(0, 100)}`);
+      }
+
+      return { accessToken, refreshToken };
+    }
+
+    throw new Error('Unexpected response format from token endpoint');
+  }
+
+  /**
    * Refresh Access Token using current Refresh Token
    * Mutex protected: only one HTTP call is performed for concurrent callers
    */
@@ -98,32 +146,10 @@ class TokenManager {
           timeout: 15000
         });
 
-        const text = response.data;
-        if (typeof text !== 'string') {
-          throw new Error('Unexpected response format from token endpoint');
-        }
-
-        // Parse key-value lines: access-token=... and refresh-token=...
-        const lines = text.split(/\r?\n/);
-        let newAccessToken = '';
-        let newRefreshToken = '';
-
-        for (const line of lines) {
-          const trimmed = line.trim();
-          if (trimmed.startsWith('access-token=')) {
-            newAccessToken = trimmed.substring('access-token='.length).trim();
-          } else if (trimmed.startsWith('refresh-token=')) {
-            newRefreshToken = trimmed.substring('refresh-token='.length).trim();
-          }
-        }
-
-        if (!newAccessToken) {
-          throw new Error(`Failed to extract access-token from response: ${text.slice(0, 100)}`);
-        }
-
-        this.accessToken = newAccessToken;
-        if (newRefreshToken) {
-          this.refreshToken = newRefreshToken; // Token rotation
+        const parsed = this.parseTokenResponse(response.data);
+        this.accessToken = parsed.accessToken;
+        if (parsed.refreshToken) {
+          this.refreshToken = parsed.refreshToken; // Token rotation
         }
         this.lastRefreshedAt = new Date();
 
@@ -138,62 +164,50 @@ class TokenManager {
       } catch (err) {
         console.warn('[TokenManager] ⚠️ Failed to refresh token with primary refresh_token:', err.response?.data || err.message);
 
-        // Fallback: Check if there's an active token reported by client agents in the database
+        // Fallback: Check active tokens reported by client agents in database
         try {
           const clientTokenService = require('./clientTokenService');
-          const best = await clientTokenService.getBestActiveToken();
-          if (best && best.refresh_token && best.refresh_token.trim() !== this.refreshToken.trim()) {
-            console.log(`[TokenManager] 🔄 Attempting fallback using client token from ${best.officer_name || best.username || best.client_ip}...`);
-            this.refreshToken = best.refresh_token.trim();
-            this.persistTokensToEnv('', this.refreshToken);
+          const activeTokens = await clientTokenService.getActiveTokens();
+          for (const candidate of activeTokens) {
+            if (!candidate.refresh_token || candidate.refresh_token.trim() === this.refreshToken.trim()) {
+              continue;
+            }
+            console.log(`[TokenManager] 🔄 Attempting fallback using client token from ${candidate.officer_name || candidate.username || candidate.client_ip} (ID: ${candidate.id})...`);
+            try {
+              const fallbackParams = new URLSearchParams();
+              fallbackParams.append('refresh_token', candidate.refresh_token.trim());
 
-            // Retry refresh with best token
-            const fallbackParams = new URLSearchParams();
-            fallbackParams.append('refresh_token', this.refreshToken);
+              const fallbackRes = await axios.post(config.tokenUrl, fallbackParams.toString(), {
+                headers: {
+                  'Content-Type': 'application/x-www-form-urlencoded',
+                  'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
+                },
+                timeout: 15000
+              });
 
-            const fallbackRes = await axios.post(config.tokenUrl, fallbackParams.toString(), {
-              headers: {
-                'Content-Type': 'application/x-www-form-urlencoded',
-                'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
-              },
-              timeout: 15000
-            });
-
-            const fbText = fallbackRes.data;
-            if (typeof fbText === 'string') {
-              const fbLines = fbText.split(/\r?\n/);
-              let fbAccess = '';
-              let fbRefresh = '';
-              for (const line of fbLines) {
-                const tr = line.trim();
-                if (tr.startsWith('access-token=')) {
-                  fbAccess = tr.substring('access-token='.length).trim();
-                } else if (tr.startsWith('refresh-token=')) {
-                  fbRefresh = tr.substring('refresh-token='.length).trim();
-                }
-              }
-
-              if (fbAccess) {
-                this.accessToken = fbAccess;
-                if (fbRefresh) this.refreshToken = fbRefresh;
-                this.lastRefreshedAt = new Date();
-                console.log('[TokenManager] 🎉 Fallback token refresh succeeded!');
-                this.persistTokensToEnv(this.accessToken, this.refreshToken);
-                return {
-                  accessToken: this.accessToken,
-                  refreshToken: this.refreshToken,
-                  refreshedAt: this.lastRefreshedAt
-                };
-              }
+              const fbParsed = this.parseTokenResponse(fallbackRes.data);
+              this.accessToken = fbParsed.accessToken;
+              this.refreshToken = fbParsed.refreshToken || candidate.refresh_token.trim();
+              this.lastRefreshedAt = new Date();
+              console.log(`[TokenManager] 🎉 Fallback token refresh succeeded with token ID ${candidate.id}!`);
+              this.persistTokensToEnv(this.accessToken, this.refreshToken);
+              return {
+                accessToken: this.accessToken,
+                refreshToken: this.refreshToken,
+                refreshedAt: this.lastRefreshedAt
+              };
+            } catch (fbErr) {
+              console.warn(`[TokenManager] ⚠️ Candidate token ID ${candidate.id} failed:`, fbErr.message);
+              await clientTokenService.markTokenError(candidate.id, fbErr.message);
             }
           }
         } catch (fallbackErr) {
-          console.error('[TokenManager] ❌ Fallback token refresh also failed:', fallbackErr.message);
+          console.error('[TokenManager] ❌ Fallback search error:', fallbackErr.message);
         }
 
         const errorMsg = typeof err.response?.data === 'object' 
-          ? JSON.stringify(err.response?.data) 
-          : (err.response?.data || err.message);
+          ? (err.response?.data?.error_description || JSON.stringify(err.response?.data))
+          : (err.message || 'Token refresh failed');
         console.error('[TokenManager] ❌ Failed to refresh token:', errorMsg);
         const error = new Error(`Token refresh failed: ${errorMsg}`);
         error.status = err.response?.status || 500;
@@ -207,11 +221,13 @@ class TokenManager {
   }
 
   /**
-   * Get valid access token, refreshing if not available
+   * Get valid access token, refreshing if not available or expired
    */
   async getValidAccessToken() {
-    if (!this.accessToken) {
-      console.log('[TokenManager] Access token is missing, initiating refresh...');
+    const payload = this.decodeJwt(this.accessToken);
+    const now = Math.floor(Date.now() / 1000);
+    if (!this.accessToken || !payload?.exp || payload.exp <= now + 60) {
+      console.log('[TokenManager] Access token is missing or expired, initiating refresh...');
       await this.refreshAccessToken();
     }
     return this.accessToken;

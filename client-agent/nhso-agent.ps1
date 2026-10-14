@@ -99,10 +99,12 @@ function Send-TokenToServer {
             Write-Host "[$nowStr] Token sync SUCCESS. Officer: $officer (Expires: $exp)" -ForegroundColor Green
             Write-AgentLog "Token sync SUCCESS. Officer: $officer (Expires: $exp)"
         } else {
+            $script:lastSentHash = $currentHash
             Write-Host "[$nowStr] Server rejected: $($response.message)" -ForegroundColor Yellow
             Write-AgentLog "Server rejected: $($response.message)"
         }
     } catch {
+        $script:lastSentHash = $currentHash
         $err = $_.Exception.Message
         $detail = ""
         try {
